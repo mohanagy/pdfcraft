@@ -2,6 +2,8 @@ use super::{
     Align, Appearance, AppearanceLabels, Color32, CornerRadius, KEY_ALGORITHMS, Layout, NewIdDraft, PdfCraftApp, Rect, SavedSig, SignGraphic,
     SignStep, Stroke, Tokens, icons, sign, theme, vec2, widgets,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// Draw the signing dialogs; returns `true` when the dialog should close.
 pub(crate) fn dialog(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool {
@@ -35,7 +37,7 @@ fn choose(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool {
     let ids = app.digital_ids.clone();
     let Some(d) = app.sign_draft.as_mut() else { return true };
     let mut close = false;
-    egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
+    egui::ScrollArea::vertical().max_height(220.0).host_show(ui, |ui| {
         for (i, e) in ids.iter().enumerate() {
             let selected = d.selected == Some(i);
             let usable = e.unusable.is_none();
@@ -82,7 +84,7 @@ fn choose(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool {
             let elided = name.elided || details.elided;
             ui.painter().galley(rect.min + vec2(40.0, 9.0), name, name_color);
             ui.painter().galley(rect.min + vec2(40.0, 28.0), details, t.text_muted);
-            let resp = if elided { resp.on_hover_text(format!("{}\n{sub}", e.name)) } else { resp };
+            let resp = if elided { resp.host_hover_text(format!("{}\n{sub}", e.name)) } else { resp };
             if !usable {
                 continue;
             }

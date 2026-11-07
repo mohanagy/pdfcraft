@@ -1,6 +1,7 @@
 //! Standards ▸ PDF/A: what the document declares, verifying it against PDF/A-2b or 3b, and
 //! fixing what can be fixed (Save as PDF/A).
 
+use crate::theme::HostScrollExt as _;
 use egui::{Align, Layout};
 use pdfcraft_engine::pdfa::{Issue, Level};
 
@@ -84,7 +85,7 @@ pub(crate) fn body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens) -> bool
     ui.add_space(6.0);
     egui::Frame::new().fill(t.hover).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        egui::ScrollArea::vertical().max_height(260.0).show(ui, |ui| {
+        egui::ScrollArea::vertical().max_height(260.0).host_show(ui, |ui| {
             ui.set_min_height(120.0);
             match &app.pdfa.issues {
                 None => {

@@ -3,6 +3,8 @@ use super::{
     Binding, BookletSubset, Color32, Content, Orientation, PAPERS, PREVIEW_BOX, PREVIEW_H, PREVIEW_W, PageOrder, Pos2, Rect, SizeMode, Stroke,
     Subset, Tokens, pos2, print, printer_label, spool, still_looking, theme, vec2, widgets,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// Properties… on CUPS: the driver's options for this print, grouped as the driver groups them.
 /// Only choices away from the printer's defaults are kept, and sent with the job.
@@ -25,7 +27,7 @@ fn driver_options_panel(ui: &mut egui::Ui, d: &mut PrintDraft, t: &Tokens) {
             ui.label(egui::RichText::new(tl!("This printer offers no settings of its own.")).small().color(t.text_muted));
             return;
         }
-        egui::ScrollArea::vertical().id_salt("driver-options").max_height(240.0).show(ui, |ui| {
+        egui::ScrollArea::vertical().id_salt("driver-options").max_height(240.0).host_show(ui, |ui| {
             for (n, chunk) in options.chunk_by(|a, b| a.group == b.group).enumerate() {
                 let group = chunk.first().map_or("", |o| o.group.as_str());
                 if !group.is_empty() {
@@ -136,7 +138,7 @@ pub(crate) fn body(
                     } else {
                         tl!("The printer driver's own settings for this print: paper tray, paper type, finishing and more.")
                     };
-                    let properties = ui.add_enabled(d.printer.is_some() && !browser, egui::Button::new(tl!("Properties…"))).on_hover_text(tip);
+                    let properties = ui.add_enabled(d.printer.is_some() && !browser, egui::Button::new(tl!("Properties…"))).host_hover_text(tip);
                     if properties.clicked()
                         && let Some(p) = d.printer.clone()
                     {
@@ -505,7 +507,7 @@ pub(crate) fn body(
             }
             ui.horizontal(|ui| {
                 let n = sheets.len();
-                if ui.add_enabled(d.sheet > 0, egui::Button::new("‹")).on_hover_text(tl!("Previous sheet")).clicked() {
+                if ui.add_enabled(d.sheet > 0, egui::Button::new("‹")).host_hover_text(tl!("Previous sheet")).clicked() {
                     d.sheet -= 1;
                 }
                 ui.label(if n == 0 {
@@ -513,7 +515,7 @@ pub(crate) fn body(
                 } else {
                     crate::i18n::fmt(tl!("Sheet {s} of {n}"), &[("s", &(d.sheet + 1).to_string()), ("n", &n.to_string())])
                 });
-                if ui.add_enabled(d.sheet + 1 < n, egui::Button::new("›")).on_hover_text(tl!("Next sheet")).clicked() {
+                if ui.add_enabled(d.sheet + 1 < n, egui::Button::new("›")).host_hover_text(tl!("Next sheet")).clicked() {
                     d.sheet += 1;
                 }
             });

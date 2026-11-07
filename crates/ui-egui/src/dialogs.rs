@@ -1,5 +1,7 @@
 //! Modal dialogs: Document Properties, Keyboard Shortcuts, About (with the Contributors and Models credits).
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use egui::{Align, Layout};
 
 use crate::theme::{self, Tokens};
@@ -514,7 +516,7 @@ fn dialog_properties(ui: &mut egui::Ui, app: &mut PdfCraftApp, req: &mut Pending
         });
         ui.end_row();
     };
-    egui::ScrollArea::vertical().max_height(460.0).auto_shrink([false, true]).show(ui, |ui| {
+    egui::ScrollArea::vertical().max_height(460.0).auto_shrink([false, true]).host_show(ui, |ui| {
         if tab == PropsTab::SpaceAudit {
             ui.add_space(4.0);
             crate::optimize_ui::audit_table(ui, &app.space_audit, &t);
@@ -764,7 +766,7 @@ fn dialog_properties(ui: &mut egui::Ui, app: &mut PdfCraftApp, req: &mut Pending
                 // A file can hold a custom name that `check_custom_key` refuses, such as one
                 // with a space: the tab lists it, and Add, Update and Delete stay off for it.
                 let why = |b: egui::Response| match &refused {
-                    Some(why) => b.on_disabled_hover_text(crate::i18n::words(why)),
+                    Some(why) => b.host_disabled_hover_text(crate::i18n::words(why)),
                     None => b,
                 };
                 // A name that isn't UTF-8 is listed with U+FFFD and can't be written back as it is.
@@ -840,7 +842,7 @@ fn dialog_properties(ui: &mut egui::Ui, app: &mut PdfCraftApp, req: &mut Pending
                             for n in (1..ends.len()).rev().take(12) {
                                 if ui
                                     .small_button(crate::i18n::fmt(tl!("View revision {n}"), &[("n", &n.to_string())]))
-                                    .on_hover_text(tl!("Open the file as it was saved then"))
+                                    .host_hover_text(tl!("Open the file as it was saved then"))
                                     .clicked()
                                 {
                                     req.open_revision = Some(n);
@@ -1392,7 +1394,7 @@ fn preferences_scroll(ui: &mut egui::Ui, max: f32, add_contents: impl FnOnce(&mu
             .max_height(max)
             .min_scrolled_height(max)
             .animated(true)
-            .show(ui, add_contents);
+            .host_show(ui, add_contents);
     });
 }
 
@@ -1496,6 +1498,7 @@ fn dialog_shortcuts(ui: &mut egui::Ui) -> bool {
     // keys the document view handles itself.
     let mut rows: Vec<(String, String)> = pdfcraft_engine::commands::COMMANDS
         .iter()
+        .filter(|c| crate::theme::host_command_allowed(ui.ctx(), c.id))
         .filter_map(|c| c.shortcut.map(|k| (crate::commands::shortcut_label(ui.ctx(), k), tl!(c.label).trim_end_matches('…').to_string())))
         .collect();
     let key = |s: pdfcraft_engine::commands::Shortcut| crate::commands::shortcut_label(ui.ctx(), s);
@@ -1530,7 +1533,7 @@ fn dialog_shortcuts(ui: &mut egui::Ui) -> bool {
     ] {
         rows.push((k, v));
     }
-    egui::ScrollArea::vertical().max_height(460.0).show(ui, |ui| {
+    egui::ScrollArea::vertical().max_height(460.0).host_show(ui, |ui| {
         egui::Grid::new("keys").num_columns(2).spacing([24.0, 6.0]).show(ui, |ui| {
             for (k, v) in &rows {
                 ui.label(egui::RichText::new(k).font(egui::FontId::monospace(12.5)));
@@ -1633,7 +1636,7 @@ fn dialog_pin_tool(ui: &mut egui::Ui, app: &mut PdfCraftApp, req: &mut Pending) 
     ui.add_space(6.0);
 
     let query = app.pin_tool_search.trim().to_lowercase();
-    egui::ScrollArea::vertical().max_height(380.0).auto_shrink([false, true]).show(ui, |ui| {
+    egui::ScrollArea::vertical().max_height(380.0).auto_shrink([false, true]).host_show(ui, |ui| {
         let mut toggle = None;
         for g in pdfcraft_engine::catalog::TOOL_GROUPS {
             let label = tl!(g.label);
@@ -1653,7 +1656,7 @@ fn dialog_pin_tool(ui: &mut egui::Ui, app: &mut PdfCraftApp, req: &mut Pending) 
             press.wash(ui, rect, 6, false);
             let body = rect.translate(press.offset());
 
-            let color = egui::Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]);
+            let color = crate::theme::surface(ui.ctx(), "icon", egui::Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]));
             crate::icons::paint(ui, egui::Rect::from_min_size(body.min + egui::vec2(8.0, 11.0), egui::vec2(22.0, 22.0)), g.icon, 20.0, color);
 
             let btn_w = 78.0;

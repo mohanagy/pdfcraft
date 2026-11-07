@@ -365,6 +365,7 @@ impl PdfCraftApp {
         view.extend(list(PANE_COMMANDS, &mut used));
         view.push(Node::Separator);
         view.extend(list(MODES, &mut used));
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         view.push(Node::submenu(tl!("Display theme"), list(THEMES, &mut used)));
         view.push(Node::Separator);
         view.push(Node::submenu(tl!("Tools"), self.tools_menu(&used)));
@@ -651,7 +652,7 @@ fn panel(command: &CommandRef) -> Option<RightPanel> {
 fn embedded_menu_visible(ctx: &egui::Context, id: &str) -> bool {
     #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
     {
-        id == SEP || (!id.starts_with("help.") || commands::command(id).is_some()) && crate::embedded::command_allowed(ctx, id)
+        id == SEP || (!id.starts_with("help.") || commands::command(id).is_some()) && crate::theme::host_command_allowed(ctx, id)
     }
     #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     {

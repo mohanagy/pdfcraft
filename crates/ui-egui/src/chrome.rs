@@ -1,5 +1,7 @@
 //! Window chrome: tab strip (with the integrated macOS title bar), mode bar, right rail.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use craft_ui::panes::{Rail, RailItem, RailRequest};
 use egui::{Align, Color32, CornerRadius, Layout, Rect, Sense, Stroke, vec2};
 
@@ -140,7 +142,7 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     if let Some(x) = ui.data_mut(|d| d.remove_temp::<f32>(scroll_id.with("to"))) {
                         area = area.horizontal_scroll_offset(x);
                     }
-                    let out = area.show(ui, |ui| {
+                    let out = area.host_show(ui, |ui| {
                         ui.horizontal_centered(|ui| {
                             // Each document tab's index and rect, and the one being dragged
                             // (with whether it was just released).
@@ -294,12 +296,12 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 ui.add_space(4.0);
                 let tip = crate::commands::command_tip(ui.ctx(), tl!("Open a PDF ({key})"), "file.open");
                 #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
-                if widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).on_hover_text(tip).clicked() {
+                if widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).host_hover_text(tip).clicked() {
                     app.open_dialog();
                 }
                 #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
                 if crate::embedded::visible(ui.ctx(), "openTab")
-                    && widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).on_hover_text(&tip).clicked()
+                    && widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).host_hover_text(&tip).clicked()
                 {
                     app.execute("file.open");
                 }
@@ -317,28 +319,32 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     if icons::button(ui, "settings", button, false, tl!("Preferences")).clicked() {
                         app.execute("app.preferences");
                     }
-                    let (icon, label) = match app.theme_preference {
-                        ThemePreference::System => ("monitor", tl!("Use system setting")),
-                        ThemePreference::Light => ("sun", tl!("Light gray")),
-                        ThemePreference::Dark => ("moon", tl!("Dark gray")),
-                    };
-                    let tip = format!("{}: {label}", tl!("Display theme"));
-                    let response = icons::button(ui, icon, button, false, &tip);
-                    // A click cycles System, Light, Dark; a right-click opens the menu.
-                    if response.clicked() {
-                        app.execute(match app.theme_preference {
-                            ThemePreference::System => "view.theme.light",
-                            ThemePreference::Light => "view.theme.dark",
-                            ThemePreference::Dark => "view.theme.system",
-                        });
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+                    {
+                        let (icon, label) = match app.theme_preference {
+                            ThemePreference::System => ("monitor", tl!("Use system setting")),
+                            ThemePreference::Light => ("sun", tl!("Light gray")),
+                            ThemePreference::Dark => ("moon", tl!("Dark gray")),
+                        };
+                        let tip = format!("{}: {label}", tl!("Display theme"));
+                        let response = icons::button(ui, icon, button, false, &tip);
+                        // A click cycles System, Light, Dark; a right-click opens the menu.
+                        if response.clicked() {
+                            app.execute(match app.theme_preference {
+                                ThemePreference::System => "view.theme.light",
+                                ThemePreference::Light => "view.theme.dark",
+                                ThemePreference::Dark => "view.theme.system",
+                            });
+                        }
+                        egui::Popup::context_menu(&response).id(response.id.with("theme_menu")).show(|ui| appearance_menu(app, ui));
                     }
-                    egui::Popup::context_menu(&response).id(response.id.with("theme_menu")).show(|ui| appearance_menu(app, ui));
                     if icons::button(ui, "circle-help", button, false, tl!("Keyboard shortcuts")).clicked() {
                         app.dialog = Some(Dialog::Shortcuts);
                     }
                     // One click to the community, from anywhere in the app.
                     #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
-                    if widgets::ghost_button_sized(ui, "messages-square", "Discord", tab_h).on_hover_text(pdfcraft_engine::links::DISCORD).clicked() {
+                    if widgets::ghost_button_sized(ui, "messages-square", "Discord", tab_h).host_hover_text(pdfcraft_engine::links::DISCORD).clicked()
+                    {
                         app.execute("help.discord");
                     }
                 });
@@ -347,6 +353,7 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
 }
 
 /// The right-click menu on the title bar's theme button.
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 fn appearance_menu(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     if ui.button(tl!("Appearance settings…")).clicked() {
         app.dialog = Some(Dialog::Preferences);
@@ -502,7 +509,7 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
         Some(file) => format!("{name}\n{file}"),
         None => name.to_string(),
     };
-    theme::hand(resp).on_hover_text(if dirty { crate::i18n::fmt(tl!("{name} — unsaved changes"), &[("name", &shown)]) } else { shown })
+    theme::hand(resp).host_hover_text(if dirty { crate::i18n::fmt(tl!("{name} — unsaved changes"), &[("name", &shown)]) } else { shown })
 }
 
 pub fn mode_bar(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
@@ -540,7 +547,7 @@ pub fn mode_bar(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         let may_print = !has_doc || pdfcraft_engine::commands::command("print.dialog").is_some_and(|c| app.command_enabled(c));
                         let mut print = ui.add_enabled_ui(may_print, |ui| icons::button(ui, "printer", 32.0, false, &tip)).inner;
                         if !may_print {
-                            print = print.on_disabled_hover_text(crate::print_refused());
+                            print = print.host_disabled_hover_text(crate::print_refused());
                         }
                         if print.clicked() {
                             app.run_command("print.dialog");
@@ -680,7 +687,7 @@ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     .text_color(t.text)
                     .frame(egui::Frame::NONE)
                     .margin(RAIL_FIELD_MARGIN);
-                let r = rail_field(ui, &t, edit).on_hover_text(tl!("Zoom — type a percentage and press Enter"));
+                let r = rail_field(ui, &t, edit).host_hover_text(tl!("Zoom — type a percentage and press Enter"));
                 ui.ctx().accesskit_node_builder(id, |node| node.set_label(tl!("Zoom")));
                 if r.gained_focus() {
                     let mut state = egui::TextEdit::load_state(ui.ctx(), id).unwrap_or_default();
@@ -724,7 +731,7 @@ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 // Out of range (an empty document), like `page_position`: "Page 0 of 0", never past the end.
                 let shown = if view.current < page_count { view.current + 1 } else { page_count };
                 let of = crate::i18n::fmt(tl!("Page {p} of {n}"), &[("p", &shown.to_string()), ("n", &page_count.to_string())]);
-                ui.label(egui::RichText::new(position).font(font).color(t.text_muted)).on_hover_text(of);
+                ui.label(egui::RichText::new(position).font(font).color(t.text_muted)).host_hover_text(of);
                 let page_input_id = view.page_input_id();
                 // Consume replacement selection once, including when the editor has lost focus.
                 let reselect = std::mem::take(&mut view.page_input_reselect);
@@ -745,7 +752,7 @@ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     .frame(egui::Frame::NONE)
                     .margin(RAIL_FIELD_MARGIN);
                 let r = rail_field(ui, &t, edit)
-                    .on_hover_text(tl!("Current page — type a page number or label (such as iv) and press Enter"))
+                    .host_hover_text(tl!("Current page — type a page number or label (such as iv) and press Enter"))
                     .accessible_name(tl!("Current page"));
                 if r.lost_focus() {
                     if ui.input(|i| i.key_pressed(egui::Key::Enter)) {

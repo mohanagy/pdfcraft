@@ -1,5 +1,6 @@
 //! Small custom widgets built on the design tokens.
 
+use crate::theme::HostHoverExt as _;
 use egui::{Align2, Color32, CornerRadius, Rect, Response, Sense, Stroke, vec2};
 
 use crate::PdfCraftApp;
@@ -21,7 +22,7 @@ const DIALOG_PAD_Y: i8 = 16;
 fn dialog_frame(ctx: &egui::Context) -> egui::Frame {
     let t = Tokens::get(ctx);
     egui::Frame::new()
-        .fill(t.card)
+        .fill(theme::surface(ctx, "dialog", t.card))
         .stroke(Stroke::new(1.0, t.border))
         .corner_radius(CornerRadius::same(10))
         .inner_margin(egui::Margin::symmetric(DIALOG_PAD_X, DIALOG_PAD_Y))
@@ -30,7 +31,11 @@ fn dialog_frame(ctx: &egui::Context) -> egui::Frame {
 
 /// A modal with the card fill, a 10-point corner and room around its contents.
 pub fn modal(ctx: &egui::Context, id: impl std::hash::Hash + std::fmt::Debug) -> egui::Modal {
-    egui::Modal::new(egui::Id::unique(id)).frame(dialog_frame(ctx))
+    egui::Modal::new(egui::Id::unique(id))
+        .frame(crate::theme::modal_frame(ctx))
+        .backdrop_color(crate::theme::surface(ctx, "page_shadow", egui::Color32::from_black_alpha(100)))
+        .frame(dialog_frame(ctx))
+        .backdrop_color(theme::surface(ctx, "page_shadow", Color32::from_black_alpha(100)))
 }
 
 /// Show [`modal`], outline its controls, and remember the card rect for layout checks.
@@ -143,7 +148,7 @@ pub fn pill_button(ui: &mut egui::Ui, label: &str, primary: bool) -> Response {
 pub fn pill_button_marked(ui: &mut egui::Ui, label: &str, primary: bool, marked: bool) -> Response {
     let t = Tokens::get(ui.ctx());
     let font = theme::medium(12.5);
-    let text_color = if primary { Color32::WHITE } else { t.text };
+    let text_color = if primary { theme::surface(ui.ctx(), "on_accent", Color32::WHITE) } else { t.text };
     // Dialog buttons are translated UI text: an explicit RTL base keeps an Arabic label right
     // to left even when its first strong character is Latin or a placeholder.
     let label_galley = crate::bidi::layout_ui(ui, label.to_owned(), font, text_color);
@@ -152,7 +157,7 @@ pub fn pill_button_marked(ui: &mut egui::Ui, label: &str, primary: bool, marked:
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), label));
     let press = theme::Press::track(ui, &resp);
     let (fill, stroke) = if primary {
-        (press.fill(t.accent, t.accent_text, t.accent.lerp_to_gamma(Color32::BLACK, 0.22)), Stroke::NONE)
+        (press.fill(t.accent, t.accent_text, theme::surface(ui.ctx(), "pressed", t.accent.lerp_to_gamma(Color32::BLACK, 0.22))), Stroke::NONE)
     } else {
         (press.fill(t.card, t.hover, t.pressed), Stroke::new(1.0, t.border))
     };
@@ -213,7 +218,7 @@ pub fn search_box(ui: &mut egui::Ui, placeholder: &str, width: f32) -> Response 
     ui.painter().with_clip_rect(text_rect).galley(egui::pos2(text_left, rect.center().y - text.size().y * 0.5), text, t.text_faint);
     ui.painter().with_clip_rect(rect).galley(shortcut_pos, shortcut, t.text_faint);
     let resp = resp.on_hover_cursor(egui::CursorIcon::Text);
-    if elided { resp.on_hover_text(placeholder) } else { resp }
+    if elided { resp.host_hover_text(placeholder) } else { resp }
 }
 
 /// Corner radius of a checkbox's box. With the widgets' radius (`Tokens::radius`, 6) egui's 14 px
@@ -483,7 +488,7 @@ pub fn toast(app: &mut PdfCraftApp, ctx: &egui::Context) {
         .fixed_pos(screen.center_bottom() - vec2(0.0, lift))
         .show(ctx, |ui| {
             egui::Frame::NONE
-                .fill(if t.dark() { Color32::from_rgb(0xEC, 0xEC, 0xEF) } else { Color32::from_rgb(0x2A, 0x2A, 0x2F) })
+                .fill(theme::surface(ctx, "toast", if t.dark() { Color32::from_rgb(0xEC, 0xEC, 0xEF) } else { Color32::from_rgb(0x2A, 0x2A, 0x2F) }))
                 .corner_radius(CornerRadius::same(8))
                 .inner_margin(egui::Margin::symmetric(16, 10))
                 .show(ui, |ui| {
@@ -492,7 +497,7 @@ pub fn toast(app: &mut PdfCraftApp, ctx: &egui::Context) {
                     // Allow natural short labels; wrap longer ones within the viewport,
                     // including the frame's 32 points and 16-point outside margins.
                     ui.set_max_width((screen.width() - 64.0).clamp(1.0, 560.0));
-                    let ink = if t.dark() { Color32::from_rgb(0x22, 0x22, 0x26) } else { Color32::WHITE };
+                    let ink = theme::surface(ctx, "text", if t.dark() { Color32::from_rgb(0x22, 0x22, 0x26) } else { Color32::WHITE });
                     let text = |ui: &mut egui::Ui| {
                         ui.add(egui::Label::new(egui::RichText::new(msg).color(ink)).wrap());
                     };
@@ -544,6 +549,7 @@ pub fn progress_notice(app: &PdfCraftApp, ctx: &egui::Context) -> bool {
     } else {
         (Color32::from_rgb(0x2A, 0x2A, 0x2F), Color32::WHITE)
     };
+    let (fill, text) = (theme::surface(ctx, "toast", fill), theme::surface(ctx, "text", text));
     let fraction = if p.fraction.is_finite() { p.fraction.clamp(0.0, 1.0) } else { 0.0 };
     let animated = crate::motion::animated(ctx);
     let shown = ctx.animate_value_with_time(egui::Id::unique("progress-notice-bar"), fraction, if animated { 0.3 } else { 0.0 });
@@ -584,7 +590,7 @@ pub fn progress_notice(app: &PdfCraftApp, ctx: &egui::Context) -> bool {
                         let clip = painter.with_clip_rect(done);
                         for (i, a) in [0.10_f32, 0.22, 0.10].into_iter().enumerate() {
                             let r = Rect::from_min_size(egui::pos2(x + i as f32 * band / 3.0, done.top()), vec2(band / 3.0, done.height()));
-                            clip.rect_filled(r, CornerRadius::ZERO, Color32::WHITE.gamma_multiply(a));
+                            clip.rect_filled(r, CornerRadius::ZERO, theme::surface(ui.ctx(), "on_accent", Color32::WHITE).gamma_multiply(a));
                         }
                     }
                 }
@@ -633,7 +639,7 @@ pub fn community_links(ui: &mut egui::Ui) -> Option<&'static str> {
         #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         for (i, l) in pdfcraft_engine::links::LINKS.iter().enumerate() {
             let resp = if i == 0 { icon_pill(ui, l.icon, tl!("Join our Discord"), true) } else { icon_pill(ui, l.icon, tl!(l.label), false) };
-            if resp.on_hover_text(l.url).clicked() {
+            if resp.host_hover_text(l.url).clicked() {
                 clicked = Some(l.command);
             }
         }
@@ -671,7 +677,7 @@ pub fn split_pill(ui: &mut egui::Ui, icon: &str, label: &str, more: &str) -> (Re
     crate::icons::paint(ui, Rect::from_min_size(body.min + vec2(12.0, 7.0), vec2(16.0, 16.0)), icon, 15.0, t.text);
     ui.painter().text(body.left_center() + vec2(34.0, 0.0), Align2::LEFT_CENTER, label, font, t.text);
     crate::icons::paint(ui, Rect::from_center_size(more_body.center(), vec2(14.0, 14.0)), "chevron-down", 13.0, t.text);
-    (theme::hand(main).on_hover_text(label), theme::hand(arrow).on_hover_text(more))
+    (theme::hand(main).host_hover_text(label), theme::hand(arrow).host_hover_text(more))
 }
 
 /// A pill button with an icon (primary = filled accent).
@@ -683,7 +689,11 @@ pub fn icon_pill(ui: &mut egui::Ui, icon: &str, label: &str, primary: bool) -> R
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), label));
     let press = theme::Press::track(ui, &resp);
     let (fill, stroke, text) = if primary {
-        (press.fill(t.accent, t.accent_text, t.accent.lerp_to_gamma(Color32::BLACK, 0.22)), Stroke::NONE, Color32::WHITE)
+        (
+            press.fill(t.accent, t.accent_text, theme::surface(ui.ctx(), "pressed", t.accent.lerp_to_gamma(Color32::BLACK, 0.22))),
+            Stroke::NONE,
+            theme::surface(ui.ctx(), "on_accent", Color32::WHITE),
+        )
     } else {
         (press.fill(t.card, t.hover, t.pressed), Stroke::new(1.0, t.border), t.text)
     };

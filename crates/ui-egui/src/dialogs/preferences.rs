@@ -1,6 +1,7 @@
 //! Preferences dialog: card-based settings interface organized into clean, modular cards
 //! with segmented pill controls and real-time search filtering.
 
+use crate::theme::HostHoverExt as _;
 use egui::{Color32, CornerRadius, Margin, Rect, RichText, Sense, Stroke, pos2, vec2};
 
 use crate::PdfCraftApp;
@@ -54,7 +55,7 @@ pub fn segmented_pill_choice_a11y_query<T: PartialEq + Copy>(
                 for &(value, label, a11y_label) in options {
                     let is_active = *current == value;
                     let font = theme::medium(12.0);
-                    let text_color = if is_active { Color32::WHITE } else { t.text };
+                    let text_color = if is_active { theme::surface(ui.ctx(), "on_accent", Color32::WHITE) } else { t.text };
                     let label_galley = layout_pill_label(ui, label, query, font, text_color);
                     let w = label_galley.size().x;
                     let (rect, resp) = ui.allocate_exact_size(vec2(w + 18.0, 24.0), Sense::click());
@@ -100,7 +101,7 @@ pub fn toggle_pill_query(ui: &mut egui::Ui, t: &Tokens, active: &mut bool, label
     let mut changed = false;
     let is_active = *active;
     let font = theme::medium(12.0);
-    let text_color = if is_active { Color32::WHITE } else { t.text };
+    let text_color = if is_active { theme::surface(ui.ctx(), "on_accent", Color32::WHITE) } else { t.text };
     let label_galley = layout_pill_label(ui, label, query, font, text_color);
     let w = label_galley.size().x;
     let (rect, resp) = ui.allocate_exact_size(vec2(w + 20.0, 26.0), Sense::click());
@@ -148,7 +149,11 @@ pub fn preference_card<R>(
     ctx: &mut PrefSearchContext,
     content: impl FnOnce(&mut egui::Ui, &mut PrefSearchContext) -> R,
 ) -> R {
-    let card_fill = if t.kind == ThemeKind::Light { Color32::from_rgb(0xF7, 0xF8, 0xFA) } else { Color32::from_rgb(0x24, 0x24, 0x28) };
+    let card_fill = theme::surface(
+        ui.ctx(),
+        "dialog",
+        if t.kind == ThemeKind::Light { Color32::from_rgb(0xF7, 0xF8, 0xFA) } else { Color32::from_rgb(0x24, 0x24, 0x28) },
+    );
     egui::Frame::new()
         .fill(card_fill)
         .stroke(Stroke::new(1.0, t.border))
@@ -258,6 +263,8 @@ pub fn create_highlight_job(
         ..Default::default()
     };
 
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    let highlight_format = egui::text::TextFormat { color: normal_color, background: normal_color.gamma_multiply(0.16), ..highlight_format };
     let mut cursor = 0;
     for &(start, end) in ranges {
         if start > cursor
@@ -510,12 +517,14 @@ pub(crate) fn preferences_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tok
     ui.add_space(12.0);
 
     // Card 2: Appearance & Theme
-    let title2 = tl_ctx!("theme", "Appearance");
-    preference_card(ui, t, title2, Some("sun"), &mut ctx, |ui, ctx| {
-        card_appearance(ui, app, t, ctx);
-    });
-    ui.add_space(12.0);
-
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        let title2 = tl_ctx!("theme", "Appearance");
+        preference_card(ui, t, title2, Some("sun"), &mut ctx, |ui, ctx| {
+            card_appearance(ui, app, t, ctx);
+        });
+        ui.add_space(12.0);
+    }
     // Card 3: Documents and View
     let title3 = tl!("Documents and view");
     preference_card(ui, t, title3, Some("file-text"), &mut ctx, |ui, ctx| {
@@ -671,13 +680,14 @@ fn card_general(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, ctx: &mut 
     }
 
     if app.window_controls.is_some() {
-        ctx.checkbox(ui, &mut app.system_title_bar, tl!("Use system title bar"), t).on_hover_text(tl!(
+        ctx.checkbox(ui, &mut app.system_title_bar, tl!("Use system title bar"), t).host_hover_text(tl!(
             "Show a basic title bar for the window buttons instead of the tab strip. GNOME doesn't draw title bars for apps, so this one doesn't follow its theme."
         ));
     }
 }
 
 /// Content for Card 2: Appearance & Theme
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 fn card_appearance(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, ctx: &mut PrefSearchContext) {
     if ctx.checkbox(ui, &mut app.show_page_edge_shadows, tl!("Show Page Edge Shadows"), t).changed() {
         ui.ctx().request_repaint();
@@ -866,7 +876,7 @@ fn date_format(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, ctx: &mut P
                 ctx.label_secondary(ui, &today_str, t);
             }
             Err(e) => {
-                ctx.label(ui, &e, theme::regular(13.0), Color32::from_rgb(0xD1, 0x3B, 0x3B));
+                ctx.label(ui, &e, theme::regular(13.0), crate::theme::surface(ui.ctx(), "danger", Color32::from_rgb(0xD1, 0x3B, 0x3B)));
             }
         };
     });
@@ -876,7 +886,7 @@ fn date_format(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens, ctx: &mut P
             tl!("{chars} can't be written into the PDF yet: Fill & Sign text is Western European only. Pick a numeric format such as dd.mm.yyyy."),
             &[("chars", &bad)],
         );
-        ctx.label(ui, &bad_msg, theme::regular(13.0), Color32::from_rgb(0xD1, 0x3B, 0x3B));
+        ctx.label(ui, &bad_msg, theme::regular(13.0), crate::theme::surface(ui.ctx(), "danger", Color32::from_rgb(0xD1, 0x3B, 0x3B)));
     }
     ui.horizontal(|ui| {
         let label = ctx.label_primary(ui, tl!("Language"), t);

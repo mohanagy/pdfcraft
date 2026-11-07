@@ -1,6 +1,7 @@
 //! Acrobat JavaScript in the shell: what scripts ask for (alerts, printing, navigation, links),
 //! the JavaScript console (⌘J), Document JavaScripts, and Preferences ▸ JavaScript.
 
+use crate::theme::HostScrollExt as _;
 use egui::{Align, Layout};
 use pdfcraft_engine::js::{JsOutput, Message, MessageIcon, Panel, Request};
 use pdfcraft_engine::{DocId, Edit};
@@ -236,7 +237,7 @@ pub(crate) fn console_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tokens)
     }
     egui::Frame::new().fill(t.hover).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        egui::ScrollArea::vertical().max_height(220.0).stick_to_bottom(true).show(ui, |ui| {
+        egui::ScrollArea::vertical().max_height(220.0).stick_to_bottom(true).host_show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.set_min_height(160.0);
             if app.js_console.log.is_empty() {
@@ -281,7 +282,7 @@ pub(crate) fn document_js_body(ui: &mut egui::Ui, app: &mut PdfCraftApp, t: &Tok
     ui.add_space(4.0);
     egui::Frame::new().fill(t.hover).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        egui::ScrollArea::vertical().max_height(120.0).id_salt("doc-js-list").show(ui, |ui| {
+        egui::ScrollArea::vertical().max_height(120.0).id_salt("doc-js-list").host_show(ui, |ui| {
             ui.set_width(ui.available_width());
             if scripts.is_empty() {
                 ui.label(egui::RichText::new(tl!("This document has no document-level scripts.")).color(t.text_muted));

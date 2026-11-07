@@ -1,5 +1,7 @@
 //! A visual editor for properties of reachable indirect structure tags.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
@@ -153,7 +155,7 @@ pub(crate) fn panel(
     let dirty = state.selected.and_then(|r| tags.iter().find(|t| t.object == r)).is_some_and(|tag| state.draft.edit(tag).is_some());
     ui.label(egui::RichText::new(crate::i18n::fmt(tl!("{n} tags"), &[("n", &matching.len().to_string())])).small().color(t.text_muted));
     let mut page = None;
-    egui::ScrollArea::vertical().max_height(100.0).show_rows(ui, 26.0, matching.len(), |ui, range| {
+    egui::ScrollArea::vertical().max_height(100.0).host_show_rows(ui, 26.0, matching.len(), |ui, range| {
         for tag in &matching[range] {
             let title = tag.title.as_deref().filter(|s| !s.is_empty()).unwrap_or(&tag.kind);
             let label = format!("{title} · {}", tag.object.num);
@@ -223,7 +225,7 @@ pub(crate) fn panel(
         later = ui.add_enabled(can_edit && !dirty && after.is_some(), egui::Button::new(tl!("Move tag later"))).clicked();
         artifact = ui
             .add_enabled(can_edit && !dirty, egui::Button::new(tl!("Mark as artifact")))
-            .on_hover_text(tl!("Remove this leaf tag from reading order and mark its direct content as an artifact"))
+            .host_hover_text(tl!("Remove this leaf tag from reading order and mark its direct content as an artifact"))
             .clicked();
     });
     ui.separator();

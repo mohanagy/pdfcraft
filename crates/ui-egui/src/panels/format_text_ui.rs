@@ -8,6 +8,8 @@
 //!
 //! The icons are Lucide's (AGENTS.md §1); only the arrangement follows Acrobat.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use egui::{Align, Color32, CornerRadius, Layout, Rect, Sense, Stroke, vec2};
 use pdfcraft_engine::text_script::Script;
 use pdfcraft_engine::{AddedText, FontFamily, TextAlign};
@@ -213,7 +215,7 @@ pub(crate) fn panel(
                                 if families.is_empty() {
                                     ui.label(tl!("No openly licensed document fonts found. Load a font file."));
                                 } else {
-                                    egui::ScrollArea::vertical().max_height(350.0).show(ui, |ui| {
+                                    egui::ScrollArea::vertical().max_height(350.0).host_show(ui, |ui| {
                                         for (family, faces) in families {
                                             if faces.len() == 1 {
                                                 if let Some(&font) = faces.first() {
@@ -256,7 +258,7 @@ pub(crate) fn panel(
             .response
     });
     font_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::ComboBox, ui.is_enabled(), tl!("Font")));
-    font_resp.on_hover_text(format!("{}\n{}", tl!("Font"), tl!("Thai and Arabic use regular fallback fonts when available.")));
+    font_resp.host_hover_text(format!("{}\n{}", tl!("Font"), tl!("Thai and Arabic use regular fallback fonts when available.")));
     ui.add_space(4.0);
 
     // Size and colour | bullets, numbering and alignment.
@@ -270,8 +272,10 @@ pub(crate) fn panel(
                 ui.close();
             }
         });
-        let (sep, _) = ui.allocate_exact_size(vec2(9.0, 26.0), Sense::hover());
-        ui.painter().vline(sep.center().x, sep.y_range().shrink(3.0), Stroke::new(1.0, t.divider));
+        if !crate::theme::HOST_EMBEDDED || paragraphs.as_ref().is_none_or(|p| p.tidy || p.selected().is_none()) {
+            let (sep, _) = ui.allocate_exact_size(vec2(9.0, 26.0), Sense::hover());
+            ui.painter().vline(sep.center().x, sep.y_range().shrink(3.0), Stroke::new(1.0, t.divider));
+        }
         planned(ui, "list", tl!("Bulleted list"));
         planned(ui, "list-ordered", tl!("Numbered list"));
         let shown = paragraphs.as_ref().map_or(look.align, |p| p.shown(look));
@@ -282,32 +286,34 @@ pub(crate) fn panel(
             TextAlign::Justify => "align-justify",
         };
         let supported = paragraphs.as_ref().is_none_or(|p| p.tidy || p.selected().is_none());
-        let align = ui
-            .add_enabled_ui(supported, |ui| icons::button(ui, current, 30.0, false, tl!("Alignment")))
-            .inner
-            .on_disabled_hover_text(format!("{} — {}", tl!("Alignment"), tl!("Planned")));
-        let align = flyout(ui, t, align);
-        egui::Popup::menu(&align).show(|ui| {
-            ui.horizontal(|ui| {
-                for (a, icon, tip) in [
-                    (TextAlign::Left, "align-left", tl!("Align left")),
-                    (TextAlign::Center, "align-center", tl!("Centre")),
-                    (TextAlign::Right, "align-right", tl!("Align right")),
-                    (TextAlign::Justify, "align-justify", tl!("Justify")),
-                ] {
-                    if icons::button(ui, icon, 30.0, shown == a, tip).clicked() {
-                        match &paragraphs {
-                            Some(p) => p.choose(look, a),
-                            None => {
-                                look.align = a;
-                                look.aligns.clear();
+        if supported || !crate::theme::HOST_EMBEDDED {
+            let align = ui
+                .add_enabled_ui(supported, |ui| icons::button(ui, current, 30.0, false, tl!("Alignment")))
+                .inner
+                .host_disabled_hover_text(format!("{} — {}", tl!("Alignment"), tl!("Planned")));
+            let align = flyout(ui, t, align);
+            egui::Popup::menu(&align).show(|ui| {
+                ui.horizontal(|ui| {
+                    for (a, icon, tip) in [
+                        (TextAlign::Left, "align-left", tl!("Align left")),
+                        (TextAlign::Center, "align-center", tl!("Centre")),
+                        (TextAlign::Right, "align-right", tl!("Align right")),
+                        (TextAlign::Justify, "align-justify", tl!("Justify")),
+                    ] {
+                        if icons::button(ui, icon, 30.0, shown == a, tip).clicked() {
+                            match &paragraphs {
+                                Some(p) => p.choose(look, a),
+                                None => {
+                                    look.align = a;
+                                    look.aligns.clear();
+                                }
                             }
+                            ui.close();
                         }
-                        ui.close();
                     }
-                }
+                });
             });
-        });
+        }
     });
 
     // Bold, italic, underline, superscript, subscript.
@@ -348,55 +354,62 @@ pub(crate) fn panel(
     let editing = extras.is_some();
     let mut fallback = Extras::default();
     let e = extras.as_deref_mut().unwrap_or(&mut fallback);
-    ui.add_enabled_ui(editing, |ui| {
-        row(ui, |ui| {
-            let label = labelled_icon(ui, t, "arrow-up-down", tl!("Line spacing"));
-            let own = tl!("Auto").to_string();
-            let shown = if e.line_spacing == 0.0 { own.clone() } else { number(e.line_spacing) };
-            outlined(ui, |ui| {
-                // The column is `half` wide in every language: a longer "Auto" is cut short (the
-                // menu and the tooltip have it whole).
-                ui.set_max_width(half);
-                let spacing_resp = craft_ui::ComboBox::from_id_salt("format-line-spacing")
-                    .selected_text(centred(ui, &shown))
-                    .width(half)
-                    .wrap_mode(egui::TextWrapMode::Truncate)
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut e.line_spacing, 0.0, own.as_str());
-                        for v in LINE_SPACINGS {
-                            ui.selectable_value(&mut e.line_spacing, v, number(v));
-                        }
-                    })
-                    .response
-                    .labelled_by(label.id);
-                spacing_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::ComboBox, ui.is_enabled(), tl!("Line spacing")));
-                spacing_resp.on_hover_text(&shown);
-            });
-            ui.add_space(8.0);
-            ui.add_enabled_ui(false, |ui| {
-                let label = labelled_icon(ui, t, "pilcrow", tl!("Paragraph spacing"));
-                let tip = format!("{} — {}", tl!("Paragraph spacing"), tl!("Planned"));
-                let _ = outlined(ui, |ui| {
-                    craft_ui::ComboBox::from_id_salt("format-paragraph-spacing")
-                        .selected_text(centred(ui, "0"))
+    if editing || !crate::theme::HOST_EMBEDDED {
+        ui.add_enabled_ui(editing, |ui| {
+            row(ui, |ui| {
+                let label = labelled_icon(ui, t, "arrow-up-down", tl!("Line spacing"));
+                let own = tl!("Auto").to_string();
+                let shown = if e.line_spacing == 0.0 { own.clone() } else { number(e.line_spacing) };
+                outlined(ui, |ui| {
+                    // The column is `half` wide in every language: a longer "Auto" is cut short (the
+                    // menu and the tooltip have it whole).
+                    ui.set_max_width(half);
+                    let spacing_resp = craft_ui::ComboBox::from_id_salt("format-line-spacing")
+                        .selected_text(centred(ui, &shown))
                         .width(half)
-                        .show_ui(ui, |_| {})
+                        .wrap_mode(egui::TextWrapMode::Truncate)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut e.line_spacing, 0.0, own.as_str());
+                            for v in LINE_SPACINGS {
+                                ui.selectable_value(&mut e.line_spacing, v, number(v));
+                            }
+                        })
                         .response
-                        .labelled_by(label.id)
-                        .on_disabled_hover_text(tip)
+                        .labelled_by(label.id);
+                    spacing_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::ComboBox, ui.is_enabled(), tl!("Line spacing")));
+                    spacing_resp.host_hover_text(&shown);
                 });
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+                {
+                    ui.add_space(8.0);
+                    ui.add_enabled_ui(false, |ui| {
+                        let label = labelled_icon(ui, t, "pilcrow", tl!("Paragraph spacing"));
+                        let tip = format!("{} — {}", tl!("Paragraph spacing"), tl!("Planned"));
+                        let _ = outlined(ui, |ui| {
+                            craft_ui::ComboBox::from_id_salt("format-paragraph-spacing")
+                                .selected_text(centred(ui, "0"))
+                                .width(half)
+                                .show_ui(ui, |_| {})
+                                .response
+                                .labelled_by(label.id)
+                                .host_disabled_hover_text(tip)
+                        });
+                    });
+                }
             });
         });
-    });
+    }
     // Any value the engine takes can be typed; the lists hold the common ones. Added text has
     // character spacing of its own (#4245), but no scale yet.
     row(ui, |ui| {
-        ui.add_enabled_ui(editing, |ui| {
-            let label = labelled_icon(ui, t, "move-horizontal", tl!("Horizontal scale"));
-            let scale = Number { value: &mut e.scale, range: SCALE_RANGE, speed: 1.0, suffix: " %" };
-            number_with_presets(ui, scale, &SCALES, half, (label.id, tl!("Horizontal scale")));
-        });
-        ui.add_space(8.0);
+        if editing || !crate::theme::HOST_EMBEDDED {
+            ui.add_enabled_ui(editing, |ui| {
+                let label = labelled_icon(ui, t, "move-horizontal", tl!("Horizontal scale"));
+                let scale = Number { value: &mut e.scale, range: SCALE_RANGE, speed: 1.0, suffix: " %" };
+                number_with_presets(ui, scale, &SCALES, half, (label.id, tl!("Horizontal scale")));
+            });
+            ui.add_space(8.0);
+        }
         let label = labelled_icon(ui, t, "arrow-left-right", tl!("Character spacing"));
         let value = if editing { &mut e.char_spacing } else { &mut look.char_spacing };
         let spacing = Number { value, range: CHAR_SPACING_RANGE, speed: 0.1, suffix: " pt" };
@@ -442,10 +455,17 @@ fn row<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
 
 /// A control PdfCraft doesn't have yet: its icon, disabled, saying so when hovered.
 fn planned(ui: &mut egui::Ui, icon: &str, label: &str) {
-    let _ = ui
-        .add_enabled_ui(false, |ui| icons::button(ui, icon, 30.0, false, label))
-        .inner
-        .on_disabled_hover_text(format!("{label} — {}", tl!("Planned")));
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        let _ = ui
+            .add_enabled_ui(false, |ui| icons::button(ui, icon, 30.0, false, label))
+            .inner
+            .host_disabled_hover_text(format!("{label} — {}", tl!("Planned")));
+    }
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        let _ = (ui, icon, label);
+    }
 }
 
 /// The small corner mark Acrobat puts on a button that opens a menu.
@@ -463,7 +483,7 @@ fn labelled_icon(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str) -> egui
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, ui.is_enabled(), label));
     let tint = if ui.is_enabled() { t.icon } else { t.text_faint };
     icons::paint(ui, Rect::from_center_size(rect.center(), vec2(18.0, 18.0)), icon, 17.0, tint);
-    resp.on_hover_text(label)
+    resp.host_hover_text(label)
 }
 
 /// A value typed in a number field: what it edits, what may be typed, and how it reads.
@@ -536,7 +556,7 @@ fn colour_button(ui: &mut egui::Ui, t: &Tokens, color: [f64; 3]) -> egui::Respon
     ui.painter().rect_filled(fill, CornerRadius::same(2), Color32::from_rgb(r, g, b));
     let stroke = if resp.hovered() { t.text } else { t.border };
     ui.painter().rect_stroke(fill, CornerRadius::same(2), Stroke::new(1.0, stroke), egui::StrokeKind::Outside);
-    crate::theme::hand(resp).on_hover_text(tl!("Colour"))
+    crate::theme::hand(resp).host_hover_text(tl!("Colour"))
 }
 
 /// Commit a typed size once (Enter or leaving the field), rather than one undo step per key.
@@ -572,7 +592,7 @@ fn font_size_input(ui: &mut egui::Ui, size: &mut f64, mixed: bool) -> bool {
         let mut response = ui.add_sized([width, 26.0], field).accessible_name(tl!("Font size:"));
         // A long translation of "Mixed" scrolls in the field: the tooltip has it whole.
         if mixed {
-            response = response.on_hover_text(tl!("Mixed"));
+            response = response.host_hover_text(tl!("Mixed"));
         }
         let cancel = (response.has_focus() || response.lost_focus()) && ui.input(|i| i.key_pressed(egui::Key::Escape));
         if cancel {

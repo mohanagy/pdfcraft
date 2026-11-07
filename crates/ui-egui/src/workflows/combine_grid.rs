@@ -14,6 +14,7 @@
 //! watchdog: there, at most one thumbnail per frame, only one waits at a time (its pool holds the
 //! parsed document), and a very slow page still stalls that frame (as in the document view).
 
+use crate::theme::HostScrollExt as _;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -251,7 +252,7 @@ pub(crate) fn grid(
     if let Some(offset) = pending_offset {
         grid = grid.vertical_scroll_offset(offset.y);
     }
-    grid.show_viewport(ui, |ui, clip| {
+    grid.host_show_viewport(ui, |ui, clip| {
         // Dragging near the top or bottom edge scrolls.
         if drag.is_some()
             && let Some(p) = pointer

@@ -1,4 +1,6 @@
 //! Measure objects: page-space clicks, live readings and persistent drawing scales.
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use crate::{LeftPanel, PdfCraftApp, QuickTool, canvas::DocView, page_cursor::Layer, theme::Tokens, widgets};
 use egui::{Color32, Pos2, Stroke};
 use pdfcraft_engine::{
@@ -368,7 +370,7 @@ fn finish(state: &mut MeasureView, pending: &mut Option<Edit>, doc: &Document, p
     }
 }
 pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
-    egui::ScrollArea::vertical().id_salt("measure-panel").show(ui, |ui| panel_body(app, ui, t));
+    egui::ScrollArea::vertical().id_salt("measure-panel").host_show(ui, |ui| panel_body(app, ui, t));
 }
 /// Draw the measurement panel: tool selection, scale calibration, snapping and the current reading.
 fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, _t: &Tokens) {
@@ -445,7 +447,7 @@ fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, _t: &Tokens) {
     let mut chosen = None;
     let fields = scale_fields(state);
     ui.horizontal(|ui| {
-        ui.label(tl!("Drawing scale")).on_hover_text(tl!("Applying a scale switches units to m / mm."));
+        ui.label(tl!("Drawing scale")).host_hover_text(tl!("Applying a scale switches units to m / mm."));
         let typed = ui.add(crate::widgets::line(&mut state.ratio_text).hint_text("1:100").desired_width(56.0).char_limit(16));
         typed.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, tl!("Scale")));
         state.ratio_dirty |= typed.changed();
@@ -515,9 +517,9 @@ fn panel_body(app: &mut PdfCraftApp, ui: &mut egui::Ui, _t: &Tokens) {
                 let reasons: Vec<String> =
                     listing.unsupported.iter().map(|u| format!("{} {}: {}", tl!("Page"), u.page.saturating_add(1), u.reason)).collect();
                 ui.colored_label(Color32::from_rgb(190, 120, 30), format!("{}: {}", tl!("Unsupported measurements"), listing.unsupported.len()))
-                    .on_hover_text(reasons.join("\n"));
+                    .host_hover_text(reasons.join("\n"));
             }
-            egui::ScrollArea::vertical().id_salt("measurement-list").max_height(140.0).show(ui, |ui| {
+            egui::ScrollArea::vertical().id_salt("measurement-list").max_height(140.0).host_show(ui, |ui| {
                 for m in &listing.measurements {
                     if ui.button(format!("{} {}: {} {}", tl!("Page"), m.page.saturating_add(1), m.reading.label, m.label)).clicked() {
                         select = Some((m.page, m.index, m.reading.clone(), m.scale.clone()));

@@ -1,6 +1,7 @@
 //! Shared Field Properties for Prepare a form. Each property is opt-in, and appearance
 //! changes are merged per field so a mixed selection keeps everything the user did not edit.
 
+use crate::theme::HostScrollExt as _;
 use pdfcraft_engine::{BorderStyle, CheckStyle, DocId, Edit, FieldFont, FieldLookPatch, FieldProps, FormFieldKind, field_flags};
 
 use crate::{prepare, theme, widgets};
@@ -279,7 +280,7 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut Draft, t: &theme::Tokens) -> (bool
         }
     });
     ui.separator();
-    egui::ScrollArea::vertical().max_height(430.0).auto_shrink([false, true]).show(ui, |ui| {
+    egui::ScrollArea::vertical().max_height(430.0).auto_shrink([false, true]).host_show(ui, |ui| {
         egui::Grid::new("bulk-field-properties").num_columns(3).spacing([16.0, 10.0]).show(ui, |ui| match d.tab {
             Tab::General => {
                 row(ui, "Tooltip:", &mut d.tooltip, |ui, v| {

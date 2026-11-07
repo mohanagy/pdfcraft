@@ -2,6 +2,7 @@
 //! a photographed document; Enhance page straightens what they enclose
 //! (`Session::enhance_camera_page`, one undoable step).
 
+use crate::theme::HostHoverExt as _;
 use egui::{Align2, Color32, CornerRadius, Pos2, Rect, Shape, Stroke, vec2};
 
 use crate::canvas::{DocView, PageXform, ViewAction};
@@ -111,6 +112,7 @@ pub(crate) fn page_input(resp: &egui::Response, xf: &PageXform, ptr: &PagePointe
 
 /// The quadrilateral and its handles, with what will be cut away dimmed.
 pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, view: &DocView) {
+    let host_blue = crate::theme::surface(painter.ctx(), "accent", BLUE);
     let Some(q) = view.camera.filter(|q| q.page == page) else { return };
     let pts: Vec<Pos2> = q.corners.iter().map(|&c| screen(xf, c)).collect();
     // Dim the page outside the quadrilateral: a band from each edge out to the page's border.
@@ -131,9 +133,9 @@ pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, view: 
         mesh.add_triangle(base, base + 2, base + 3);
     }
     painter.add(Shape::mesh(mesh));
-    painter.add(Shape::closed_line(pts.clone(), Stroke::new(1.5, BLUE)));
+    painter.add(Shape::closed_line(pts.clone(), Stroke::new(1.5, host_blue)));
     for p in pts {
-        painter.circle(p, 6.0, Color32::WHITE, Stroke::new(2.0, BLUE));
+        painter.circle(p, 6.0, Color32::WHITE, Stroke::new(2.0, host_blue));
     }
 }
 
@@ -148,10 +150,15 @@ pub(crate) fn bar(ctx: &egui::Context, view: &mut DocView, area: Rect, t: &Token
         .fixed_pos(area.right_top() + vec2(-18.0, 12.0))
         .show(ctx, |ui| {
             egui::Frame::NONE
-                .fill(t.card)
+                .fill(crate::theme::surface(ctx, "toolstrip", t.card))
                 .stroke(Stroke::new(1.0, t.border))
                 .corner_radius(CornerRadius::same(10))
-                .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }) })
+                .shadow(egui::Shadow {
+                    offset: [0, 4],
+                    blur: 16,
+                    spread: 0,
+                    color: crate::theme::surface(ui.ctx(), "page_shadow", Color32::from_black_alpha(if t.dark() { 90 } else { 30 })),
+                })
                 .inner_margin(egui::Margin::symmetric(12, 8))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
@@ -185,7 +192,7 @@ pub(crate) fn bar(ctx: &egui::Context, view: &mut DocView, area: Rect, t: &Token
                                 let r = ui.add_enabled(allowed, egui::Button::image(crate::icons::image(name, 18.0, t.text)).frame(false));
                                 // Named for screen readers (and tests), not only on hover.
                                 r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, allowed, tip));
-                                r.on_hover_text(tip).clicked()
+                                r.host_hover_text(tip).clicked()
                             };
                             if icon(ui, "rotate-ccw", tl!("Rotate counterclockwise")) {
                                 view.pending_action = Some(ViewAction::CameraRotate { clockwise: false });

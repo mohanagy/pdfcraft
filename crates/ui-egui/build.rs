@@ -204,7 +204,9 @@ fn embedded_catalog(path: &std::path::Path) -> std::path::PathBuf {
             .lines()
             .filter(|l| {
                 let l = l.to_ascii_lowercase();
-                !["discord", "getartcraft.com", "github.com/storytold"].iter().any(|needle| l.contains(needle))
+                !["discord", "getartcraft.com", "github.com/storytold", "milestone", "bring your own", "ai provider", "ai assistant"]
+                    .iter()
+                    .any(|needle| l.contains(needle))
             })
             .collect::<Vec<_>>()
             .join("\n");

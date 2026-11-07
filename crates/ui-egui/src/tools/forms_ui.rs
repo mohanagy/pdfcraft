@@ -7,6 +7,8 @@
 //! list of their options; an editable one (Edit flag) also takes typed text in a box over the
 //! field. Every change is one undoable engine edit.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use std::collections::HashSet;
 
 use egui::{Color32, CornerRadius, Pos2, Rect, Stroke, vec2};
@@ -396,7 +398,7 @@ fn calendar(ctx: &egui::Context, view: &mut DocView, field: egui::Rect, fmt: &st
         .show(ctx, |ui| {
             egui::Frame::popup(ui.style()).show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    if ui.small_button("‹").on_hover_text(tl!("Previous month")).clicked() {
+                    if ui.small_button("‹").host_hover_text(tl!("Previous month")).clicked() {
                         (y, m) = if m == 1 { (y - 1, 12) } else { (y, m - 1) };
                     }
                     ui.label(
@@ -406,7 +408,7 @@ fn calendar(ctx: &egui::Context, view: &mut DocView, field: egui::Rect, fmt: &st
                         ))
                         .strong(),
                     );
-                    if ui.small_button("›").on_hover_text(tl!("Next month")).clicked() {
+                    if ui.small_button("›").host_hover_text(tl!("Next month")).clicked() {
                         // `y + 1` would overflow at `i32::MAX` (a date parsed or persisted with
                         // that year); stay put on December of the last year instead of panicking.
                         (y, m) = if m == 12 { y.checked_add(1).map_or((y, m), |next| (next, 1)) } else { (y, m + 1) };
@@ -442,7 +444,7 @@ fn calendar(ctx: &egui::Context, view: &mut DocView, field: egui::Rect, fmt: &st
                             }
                             if ui
                                 .selectable_label(selected, text)
-                                .on_hover_text(crate::i18n::fmt(
+                                .host_hover_text(crate::i18n::fmt(
                                     tl!("{month} {day}, {y}"),
                                     &[
                                         ("month", tl_ctx!("calendar date", MONTHS[(m - 1) as usize])),
@@ -470,7 +472,7 @@ fn calendar(ctx: &egui::Context, view: &mut DocView, field: egui::Rect, fmt: &st
                     ui.allocate_ui_with_layout(vec2(grid.response.rect.width(), 0.0), egui::Layout::top_down(egui::Align::Center), |ui| {
                         let mut button = ui.small_button(tl!("Today"));
                         if let Some(month) = today.1.checked_sub(1).and_then(|i| MONTHS.get(i as usize)) {
-                            button = button.on_hover_text(crate::i18n::fmt(
+                            button = button.host_hover_text(crate::i18n::fmt(
                                 tl!("{month} {day}, {y}"),
                                 &[("month", tl_ctx!("calendar date", month)), ("day", &today.2.to_string()), ("y", &ty.to_string())],
                             ));
@@ -886,7 +888,7 @@ pub(crate) fn overlay(
                     egui::Frame::popup(ui.style()).show(ui, |ui| {
                         ui.set_min_width(rect.width().max(160.0));
                         ui.label(egui::RichText::new(&f.name).small().color(t.text_faint));
-                        egui::ScrollArea::vertical().max_height(260.0).show(ui, |ui| {
+                        egui::ScrollArea::vertical().max_height(260.0).host_show(ui, |ui| {
                             for (export, display) in &f.options {
                                 let on = f.value.first() == Some(export);
                                 if ui.selectable_label(on, display).clicked() {

@@ -4,6 +4,8 @@ use super::{
     Align2, Color32, CornerRadius, DocInfo, DocView, Edit, Pos2, Rect, RenderRequest, RequestKind, Sense, Stroke, Tokens, Vec2, ViewAction,
     device_pixels, icons, pos2, theme, vec2, widgets,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// How far a sharp grid render may be from the size drawn before it is redone: a pinch changes
 /// the size on every frame, and a slightly soft or slightly large image is fine meanwhile.
@@ -116,12 +118,12 @@ fn organize_toolbar(view: &mut DocView, info: &DocInfo, editable: bool, dirty: b
                 }
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if widgets::ghost_button(ui, "x", tl!("Close")).on_hover_text(tl!("Back to the document")).clicked() {
+                if widgets::ghost_button(ui, "x", tl!("Close")).host_hover_text(tl!("Back to the document")).clicked() {
                     view.organize = false;
                 }
                 // What the grid shows is what is saved.
                 let save = ui.add_enabled_ui(dirty, |ui| widgets::pill_button(ui, tl!("Save pages"), true)).inner;
-                if save.on_hover_text(tl!("Save these pages as one PDF")).on_disabled_hover_text(tl!("No changes to save")).clicked() {
+                if save.host_hover_text(tl!("Save these pages as one PDF")).host_disabled_hover_text(tl!("No changes to save")).clicked() {
                     view.pending_action = Some(ViewAction::Save);
                 }
                 ui.add_space(8.0);
@@ -138,7 +140,7 @@ fn organize_toolbar(view: &mut DocView, info: &DocInfo, editable: bool, dirty: b
                     .frame(false);
                 let percent = ui.add_sized([44.0, 30.0], percent);
                 percent.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!("Reset page size")));
-                if percent.on_hover_text(tl!("Reset page size")).clicked() {
+                if percent.host_hover_text(tl!("Reset page size")).clicked() {
                     view.grid_zoom_request = Some(1.0);
                 }
                 if ui
@@ -210,7 +212,7 @@ fn gap_button(ui: &mut egui::Ui, gap: usize, at: Pos2, height: f32, label: Strin
     let ink = Stroke::new(1.5, if hot { Color32::WHITE } else { t.text_muted });
     ui.painter().line_segment([at - vec2(4.0, 0.0), at + vec2(4.0, 0.0)], ink);
     ui.painter().line_segment([at - vec2(0.0, 4.0), at + vec2(0.0, 4.0)], ink);
-    resp.on_hover_text(label).clicked()
+    resp.host_hover_text(label).clicked()
 }
 
 /// Middle-button auto-scroll: its delta scrolls the grid, and the page controls under it are
@@ -305,7 +307,7 @@ pub(super) fn organize_grid(
     if !show_page_edge_shadows {
         ui.spacing_mut().scroll.fade.strength = 0.0;
     }
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show_viewport(ui, |ui, clip| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).host_show_viewport(ui, |ui, clip| {
         apply_auto_scroll(ui, middle_gesture, auto_delta);
         ui.add_space(20.0);
         let cols = ((ui.available_width() - 40.0) / cell.x).floor().max(1.0) as usize;
@@ -379,7 +381,7 @@ pub(super) fn organize_grid(
                 let check = ui.push_id(("org-check", i), |ui| ui.put(check_rect, widgets::checkbox_without_text(&mut checked))).inner;
                 let label = crate::i18n::fmt(tl!("Select page {label}"), &[("label", &p.label)]);
                 check.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, checked, label.clone()));
-                if check.on_hover_text(label).changed() {
+                if check.host_hover_text(label).changed() {
                     view.click_page(i, egui::Modifiers::COMMAND, false);
                     // The document shows the page picked here when the grid closes, as after a
                     // Pages-panel click, so reopening the grid keeps the pick (issue #1910).

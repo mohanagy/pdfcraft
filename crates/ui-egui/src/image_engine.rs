@@ -255,10 +255,18 @@ pub fn draw_handle(painter: &egui::Painter, center: Pos2, is_active: bool, is_ho
     };
 
     // Draw handle shadow/glow
-    painter.circle_filled(center, circle_radius + 1.5, Color32::from_rgba_unmultiplied(0, 0, 0, 80));
+    painter.circle_filled(
+        center,
+        circle_radius + 1.5,
+        crate::theme::surface(painter.ctx(), "page_shadow", Color32::from_rgba_unmultiplied(0, 0, 0, 80)),
+    );
 
     // Draw handle circle
-    painter.circle_filled(center, circle_radius, fill_color);
+    painter.circle_filled(
+        center,
+        circle_radius,
+        crate::theme::surface(painter.ctx(), if is_active || is_hovered { "hover" } else { "field" }, fill_color),
+    );
     painter.circle_stroke(center, circle_radius, Stroke::new(1.8, accent_color));
 }
 

@@ -1,4 +1,5 @@
 use super::*;
+use crate::theme::HostScrollExt as _;
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -274,7 +275,7 @@ fn two_pass_scroll_area_applies_one_wheel_step_like_a_single_pass() {
             wheel_events.push(ui.input(|i| i.events.iter().filter(|e| matches!(e, egui::Event::MouseWheel { .. })).count()));
             // Taller than the 300-point viewport, so one step stays far from the scroll
             // limit and a doubled step could not be hidden by clamping.
-            let out = egui::ScrollArea::vertical().id_salt("motion-two-pass-scroll").auto_shrink([false, false]).show(ui, |ui| {
+            let out = egui::ScrollArea::vertical().id_salt("motion-two-pass-scroll").auto_shrink([false, false]).host_show(ui, |ui| {
                 ui.set_min_size(egui::vec2(100.0, 3000.0));
             });
             offsets.push(out.state.unclamped_offset());

@@ -4,6 +4,8 @@ use super::{
     Align, Color32, Column, CornerRadius, ERROR, Layout, Modifiers, PdfCraftApp, Rect, Sense, Stroke, TableBuilder, Tokens, WARNING, icons, theme,
     vec2,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// A column heading being dragged to a new place.
 #[derive(Clone, Copy)]
@@ -51,7 +53,7 @@ pub(super) fn table(
     let rows = Rows { checks, selected, twice, conflicts, dragging, sort: app.combine_tab.sort };
     let mut heading_event = None;
     let mut shown = None;
-    egui::ScrollArea::horizontal().id_salt("combine-files-h").show(ui, |ui| {
+    egui::ScrollArea::horizontal().id_salt("combine-files-h").host_show(ui, |ui| {
         table_body(ui, TableBody { app, theme: t, rows: &rows, widths, events: &mut events, heading_event: &mut heading_event, shown: &mut shown })
     });
     // A column resized by hand keeps its width from now on.
@@ -139,7 +141,7 @@ fn heading(ui: &mut egui::Ui, t: &Tokens, key: SortKey, sort: Option<(SortKey, b
     }
     let response = response
         .on_hover_cursor(if being_dragged { egui::CursorIcon::Grabbing } else { egui::CursorIcon::PointingHand })
-        .on_hover_text(tl!("Click to sort, drag to move the column. Drag its edge to resize it."));
+        .host_hover_text(tl!("Click to sort, drag to move the column. Drag its edge to resize it."));
     response.context_menu(|ui| {
         if ui.button(tl!("Reset columns")).clicked() {
             event = Some(HeadingEvent::Reset);
@@ -221,7 +223,7 @@ fn table_body(ui: &mut egui::Ui, context: TableBody<'_>) {
                         })
                         .response
                         .on_hover_cursor(egui::CursorIcon::Grab)
-                        .on_hover_text(tl!("Drag to reorder"));
+                        .host_hover_text(tl!("Drag to reorder"));
                     });
                     for kind in order {
                         row.col(|ui| match kind {
@@ -241,10 +243,10 @@ fn table_body(ui: &mut egui::Ui, context: TableBody<'_>) {
                                 let border = if check.is_err() { Stroke::new(1.5, ERROR) } else { Stroke::new(1.0, t.border) };
                                 ui.painter().rect_stroke(edit.rect, CornerRadius::same(4), border, egui::StrokeKind::Inside);
                                 if let Err(e) = &check {
-                                    edit.clone().on_hover_text(e);
+                                    edit.clone().host_hover_text(e);
                                 } else {
                                     edit.clone()
-                                        .on_hover_text(crate::i18n::fmt(tl!("Pages of {name} to combine, e.g. 1-3, 6"), &[("name", &f.name)]));
+                                        .host_hover_text(crate::i18n::fmt(tl!("Pages of {name} to combine, e.g. 1-3, 6"), &[("name", &f.name)]));
                                 }
                                 if edit.gained_focus() {
                                     events.range_focused = true;
@@ -265,7 +267,7 @@ fn table_body(ui: &mut egui::Ui, context: TableBody<'_>) {
                             }
                             SortKey::Modified => match f.modified {
                                 Some(m) => {
-                                    ui.label(egui::RichText::new(ago(m)).color(t.text_muted)).on_hover_text(utc_stamp(m));
+                                    ui.label(egui::RichText::new(ago(m)).color(t.text_muted)).host_hover_text(utc_stamp(m));
                                 }
                                 None => {
                                     ui.label(egui::RichText::new("—").color(t.text_faint));
@@ -303,7 +305,7 @@ fn table_body(ui: &mut egui::Ui, context: TableBody<'_>) {
                                 ui.add(icons::image(icon, 15.0, colour));
                                 if f.lock.is_some() {
                                     let link =
-                                        ui.add(egui::Link::new(egui::RichText::new(tl!("Unlock…")).color(t.accent))).on_hover_text(match f.lock {
+                                        ui.add(egui::Link::new(egui::RichText::new(tl!("Unlock…")).color(t.accent))).host_hover_text(match f.lock {
                                             Some(Lock::Permissions) => tl!("Enter the permissions password to allow combining"),
                                             _ => tl!("Enter the password that opens it"),
                                         });
@@ -316,7 +318,7 @@ fn table_body(ui: &mut egui::Ui, context: TableBody<'_>) {
                                         .truncate()
                                         .selectable(false),
                                 )
-                                .on_hover_text(all);
+                                .host_hover_text(all);
                             }
                         });
                     }

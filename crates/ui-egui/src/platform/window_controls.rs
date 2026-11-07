@@ -7,6 +7,7 @@
 //! thin zones along the window's edges resize it. Desktops with server-side decorations (KDE,
 //! Sway, Hyprland, X11) keep their own frame and never get here.
 
+use crate::theme::HostHoverExt as _;
 use crate::theme::Tokens;
 use egui::viewport::ResizeDirection;
 use egui::{Align2, Color32, CursorIcon, Pos2, Rect, Sense, Stroke, Vec2};
@@ -97,7 +98,7 @@ pub fn buttons(ui: &mut egui::Ui, buttons: &[Button]) {
         };
         let (rect, response) = ui.allocate_exact_size(Vec2::splat(BUTTON), Sense::click());
         response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, label));
-        let response = response.on_hover_text(label);
+        let response = response.host_hover_text(label);
         if ui.is_rect_visible(rect) {
             paint(ui.painter(), rect, button, maximized, &t, &response);
         }

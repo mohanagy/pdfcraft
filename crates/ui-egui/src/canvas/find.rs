@@ -220,10 +220,15 @@ pub(super) fn find_bar(view: &mut DocView, pages: usize, area: Rect, ui: &mut eg
         .fixed_pos(area.right_top() + vec2(-18.0, 12.0))
         .show(ui.ctx(), |ui| {
             egui::Frame::NONE
-                .fill(t.card)
+                .fill(crate::theme::surface(ui.ctx(), "toolstrip", t.card))
                 .stroke(Stroke::new(1.0, t.border))
                 .corner_radius(CornerRadius::same(10))
-                .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }) })
+                .shadow(egui::Shadow {
+                    offset: [0, 4],
+                    blur: 16,
+                    spread: 0,
+                    color: crate::theme::surface(ui.ctx(), "page_shadow", Color32::from_black_alpha(if t.dark() { 90 } else { 30 })),
+                })
                 .inner_margin(egui::Margin::symmetric(10, 6))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {

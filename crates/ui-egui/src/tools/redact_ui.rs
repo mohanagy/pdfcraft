@@ -3,6 +3,7 @@
 //! mark every match, set the default box colour and overlay text, and apply all marks (with a
 //! confirmation, as Acrobat asks) or clear them.
 
+use crate::theme::HostScrollExt as _;
 use egui::{Color32, CornerRadius, Pos2, Rect, Stroke};
 use pdfcraft_engine::{Edit, NewAnnotation, REDACT_PATTERNS, REDACTION_CODE_SETS, RedactPattern, RedactionCodeSet, Rgb, Shape, Style, rect_quad};
 use pdfcraft_render::DocInfo;
@@ -395,7 +396,7 @@ pub(crate) fn search_body(ui: &mut egui::Ui, d: &mut SearchDraft, t: &Tokens) ->
     widgets::radio_value(ui, &mut d.mode, SearchMode::Words, tl!("Multiple words or phrases"));
     let mut import = false;
     ui.add_enabled_ui(d.mode == SearchMode::Words, |ui| {
-        egui::ScrollArea::vertical().id_salt("redact-words").max_height(120.0).show(ui, |ui| {
+        egui::ScrollArea::vertical().id_salt("redact-words").max_height(120.0).host_show(ui, |ui| {
             ui.add(egui::TextEdit::multiline(&mut d.words).hint_text(tl!("One word or phrase per line")).desired_width(380.0).desired_rows(4))
                 .accessible_name(tl!("Words or phrases to redact"));
         });

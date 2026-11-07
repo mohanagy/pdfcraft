@@ -3,6 +3,7 @@ use super::{
     ABOVE, Align2, Arc, BAR_H, Color32, CombineFile, CornerRadius, ERROR, FALLBACK_PAGE, GridDrag, Lock, MAX_EXPAND, ON_PAPER, PdfCraftApp, Rect,
     RowAction, Sense, Stroke, TextureHandle, Tokens, Vec2, WARNING, fit_name, icons, paper_size, pos2, theme, vec2,
 };
+use crate::theme::HostHoverExt as _;
 
 /// One card's place and what it shows.
 pub(super) struct Card {
@@ -174,7 +175,7 @@ impl Card {
 
         let tip = self.tooltip(f, page_label.as_deref(), &pages, why.as_ref().map(|(_, _, reason)| reason.as_str()));
         // (Over the bar, its buttons say what they do instead.)
-        let resp = if covered || over_bar { resp } else { resp.on_hover_text(tip) };
+        let resp = if covered || over_bar { resp } else { resp.host_hover_text(tip) };
 
         // The same actions on a right click, show large first (and Unlock… for a locked file).
         let at = resp.rect.left_bottom();
@@ -379,75 +380,78 @@ pub(crate) fn preview(app: &mut PdfCraftApp, ctx: &egui::Context, t: &Tokens) {
     // No larger than the GPU takes, or the render would be refused.
     let longest = ctx.input(|i| i.max_texture_side as f32).min(PREVIEW_SIDE);
     let thumbs = &mut app.combine_thumbs;
-    let modal = egui::Modal::new(egui::Id::unique("combine-preview")).show(ctx, |ui| {
-        ui.set_width(width);
-        ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(f.name.clone()).font(theme::semibold(15.0)));
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if icons::button(ui, "x", 30.0, false, tl!("Close")).clicked() {
-                    close = true;
-                }
-                let of = crate::i18n::fmt(tl!("Page {p} of {n}"), &[("p", &(at + 1).to_string()), ("n", &n.to_string())]);
-                ui.label(egui::RichText::new(of).color(t.text_muted));
+    let modal = egui::Modal::new(egui::Id::unique("combine-preview"))
+        .frame(crate::theme::modal_frame(ctx))
+        .backdrop_color(crate::theme::surface(ctx, "page_shadow", egui::Color32::from_black_alpha(100)))
+        .show(ctx, |ui| {
+            ui.set_width(width);
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(f.name.clone()).font(theme::semibold(15.0)));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if icons::button(ui, "x", 30.0, false, tl!("Close")).clicked() {
+                        close = true;
+                    }
+                    let of = crate::i18n::fmt(tl!("Page {p} of {n}"), &[("p", &(at + 1).to_string()), ("n", &n.to_string())]);
+                    ui.label(egui::RichText::new(of).color(t.text_muted));
+                });
             });
-        });
-        ui.add_space(8.0);
-        // The page, as large as fits.
-        let (area, _) = ui.allocate_exact_size(vec2(width, body_h), Sense::hover());
-        let known = f.sizes.get(page).copied().filter(|(w, h)| paper_size(*w, *h, area.size()).is_some());
-        let (w, h) = known.unwrap_or(FALLBACK_PAGE);
-        let size = paper_size(w, h, area.size() - vec2(8.0, 8.0)).unwrap_or(area.size());
-        let paper = Rect::from_center_size(area.center(), size);
-        let painter = ui.painter_at(area);
-        painter.rect_filled(paper.translate(vec2(0.0, 2.0)), CornerRadius::same(1), t.page_shadow);
-        painter.rect_filled(paper, CornerRadius::ZERO, Color32::WHITE);
-        let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
-        if known.is_some() {
-            let scale = (size.x * ppp / w).min(size.y * ppp / h).min(longest / w.max(h));
-            let px = [w * scale, h * scale].map(|v| (v.max(1.0).ceil() as u32).div_ceil(SIZE_STEP).saturating_mul(SIZE_STEP));
-            let key = Key { source: Arc::as_ptr(&f.bytes) as usize, auth: f.auth, page, px };
-            match thumbs.look(PREVIEW, key) {
-                Look::Ready(tex) => {
-                    painter.image(tex, paper, uv, Color32::WHITE);
-                }
-                Look::Failed(e) => {
-                    let text = crate::i18n::fmt(tl!("Preview unavailable: {e}"), &[("e", &e)]);
-                    painter.text(paper.center(), Align2::CENTER_CENTER, text, theme::regular(13.0), ON_PAPER);
-                }
-                Look::Pending(stand_in) => {
-                    // A smaller render of this page stands in: the last size shown, or its card's.
-                    let card = thumbs.entries.get(&(f.group, page)).filter(|e| e.key.auth == f.auth).and_then(|e| e.tex.as_ref());
-                    if let Some(tex) = stand_in.or(card.map(TextureHandle::id)) {
+            ui.add_space(8.0);
+            // The page, as large as fits.
+            let (area, _) = ui.allocate_exact_size(vec2(width, body_h), Sense::hover());
+            let known = f.sizes.get(page).copied().filter(|(w, h)| paper_size(*w, *h, area.size()).is_some());
+            let (w, h) = known.unwrap_or(FALLBACK_PAGE);
+            let size = paper_size(w, h, area.size() - vec2(8.0, 8.0)).unwrap_or(area.size());
+            let paper = Rect::from_center_size(area.center(), size);
+            let painter = ui.painter_at(area);
+            painter.rect_filled(paper.translate(vec2(0.0, 2.0)), CornerRadius::same(1), t.page_shadow);
+            painter.rect_filled(paper, CornerRadius::ZERO, Color32::WHITE);
+            let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+            if known.is_some() {
+                let scale = (size.x * ppp / w).min(size.y * ppp / h).min(longest / w.max(h));
+                let px = [w * scale, h * scale].map(|v| (v.max(1.0).ceil() as u32).div_ceil(SIZE_STEP).saturating_mul(SIZE_STEP));
+                let key = Key { source: Arc::as_ptr(&f.bytes) as usize, auth: f.auth, page, px };
+                match thumbs.look(PREVIEW, key) {
+                    Look::Ready(tex) => {
                         painter.image(tex, paper, uv, Color32::WHITE);
                     }
-                    if scale.is_finite() && scale > 0.0 {
-                        thumbs.wants.push(Want {
-                            slot: PREVIEW,
-                            key,
-                            bytes: f.bytes.clone(),
-                            password: f.password().map(Arc::from),
-                            scale,
-                            visible: true,
-                        });
+                    Look::Failed(e) => {
+                        let text = crate::i18n::fmt(tl!("Preview unavailable: {e}"), &[("e", &e)]);
+                        painter.text(paper.center(), Align2::CENTER_CENTER, text, theme::regular(13.0), ON_PAPER);
+                    }
+                    Look::Pending(stand_in) => {
+                        // A smaller render of this page stands in: the last size shown, or its card's.
+                        let card = thumbs.entries.get(&(f.group, page)).filter(|e| e.key.auth == f.auth).and_then(|e| e.tex.as_ref());
+                        if let Some(tex) = stand_in.or(card.map(TextureHandle::id)) {
+                            painter.image(tex, paper, uv, Color32::WHITE);
+                        }
+                        if scale.is_finite() && scale > 0.0 {
+                            thumbs.wants.push(Want {
+                                slot: PREVIEW,
+                                key,
+                                bytes: f.bytes.clone(),
+                                password: f.password().map(Arc::from),
+                                scale,
+                                visible: true,
+                            });
+                        }
                     }
                 }
+            } else {
+                icons::paint(ui, Rect::from_center_size(paper.center(), Vec2::splat(36.0)), "eye-off", 36.0, ON_PAPER);
             }
-        } else {
-            icons::paint(ui, Rect::from_center_size(paper.center(), Vec2::splat(36.0)), "eye-off", 36.0, ON_PAPER);
-        }
-        painter.rect_stroke(paper, CornerRadius::ZERO, Stroke::new(1.0, t.border), egui::StrokeKind::Outside);
-        ui.add_space(8.0);
-        // Previous and next, centred below.
-        ui.horizontal(|ui| {
-            ui.add_space((width - 2.0 * 30.0 - 6.0) / 2.0);
-            if ui.add_enabled_ui(at > 0, |ui| icons::button(ui, "chevron-left", 30.0, false, tl!("Previous page"))).inner.clicked() {
-                step = -1;
-            }
-            if ui.add_enabled_ui(at + 1 < n, |ui| icons::button(ui, "chevron-right", 30.0, false, tl!("Next page"))).inner.clicked() {
-                step = 1;
-            }
+            painter.rect_stroke(paper, CornerRadius::ZERO, Stroke::new(1.0, t.border), egui::StrokeKind::Outside);
+            ui.add_space(8.0);
+            // Previous and next, centred below.
+            ui.horizontal(|ui| {
+                ui.add_space((width - 2.0 * 30.0 - 6.0) / 2.0);
+                if ui.add_enabled_ui(at > 0, |ui| icons::button(ui, "chevron-left", 30.0, false, tl!("Previous page"))).inner.clicked() {
+                    step = -1;
+                }
+                if ui.add_enabled_ui(at + 1 < n, |ui| icons::button(ui, "chevron-right", 30.0, false, tl!("Next page"))).inner.clicked() {
+                    step = 1;
+                }
+            });
         });
-    });
     if close || modal.should_close() {
         app.combine_tab.preview = None;
     } else if let Some(p) = app.combine_tab.preview.as_mut() {

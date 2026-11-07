@@ -11,6 +11,8 @@
 //! pointer in the list or on the page, else the selected one) arrows from the fields it reads and
 //! to the fields that read it.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -545,7 +547,7 @@ fn cards(ui: &mut egui::Ui, t: &Tokens, pal: &Palette, order: &CalculationOrder,
             ui.add_space(2.0);
             ui.horizontal(|ui| {
                 let fix = ui.add_enabled_ui(editable, |ui| widgets::pill_button(ui, tl!("Fix order"), true)).inner;
-                if fix.on_hover_text(tl!("Move only what must move, so every field calculates after the fields it reads.")).clicked() {
+                if fix.host_hover_text(tl!("Move only what must move, so every field calculates after the fields it reads.")).clicked() {
                     act = Some(Act::Order(order.fixed()));
                 }
                 ui.add(egui::Label::new(egui::RichText::new(tl!("Moves only what must move")).font(theme::regular(11.5)).color(t.text_muted)).wrap());
@@ -692,7 +694,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     view.calc_order.scrolled_to = selected.clone();
     let mut hover_row = None;
     let count = names.len();
-    egui::ScrollArea::vertical().id_salt(("calc-order", id)).auto_shrink([false, false]).show(ui, |ui| {
+    egui::ScrollArea::vertical().id_salt(("calc-order", id)).auto_shrink([false, false]).host_show(ui, |ui| {
         for (k, (f, row)) in order.fields.iter().zip(&listed.rows).enumerate() {
             let sense = if editable { Sense::click_and_drag() } else { Sense::click() };
             let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), ROW), sense);
@@ -777,7 +779,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
                         bpress.wash(ui, r, 4, false);
                         icons::paint(ui, r.shrink(2.5).translate(bpress.offset()), icon, 14.0, if to.is_some() { t.icon } else { t.text_faint });
                     }
-                    if theme::hand(b).on_hover_text(tip).clicked()
+                    if theme::hand(b).host_hover_text(tip).clicked()
                         && let Some(a) = to.and_then(|to| moved(k, to))
                     {
                         act = Some(a);
@@ -806,7 +808,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
             // The whole formula, then what is wrong; written only while the pointer is on it.
             let resp = if resp.hovered() {
                 let why = [row.formula.clone(), explained(&f.issues)].into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join("\n\n");
-                if why.is_empty() { resp } else { resp.on_hover_text(why) }
+                if why.is_empty() { resp } else { resp.host_hover_text(why) }
             } else {
                 resp
             };
@@ -816,7 +818,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         }
         ui.add_space(8.0);
         ui.add(widgets::checkbox(&mut links_on, egui::RichText::new(tl!("Links on page")).font(theme::regular(12.0)).color(t.text_muted)))
-            .on_hover_text(tl!("Show on the page which fields each field reads"));
+            .host_hover_text(tl!("Show on the page which fields each field reads"));
         if editable {
             ui.add_space(4.0);
             let (up, down) = if cfg!(target_os = "macos") { ("⌥↑", "⌥↓") } else { ("Alt+↑", "Alt+↓") };

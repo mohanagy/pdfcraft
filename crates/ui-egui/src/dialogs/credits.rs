@@ -3,6 +3,8 @@
 //! build.rs from contributors/contributors.json; nothing is
 //! read at run time.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use std::cmp::Ordering;
 
 use egui::RichText;
@@ -251,7 +253,7 @@ pub fn contributors_ui(ui: &mut egui::Ui) {
                 }
             }
         });
-        if ui.button(if v.ascending { "▲" } else { "▼" }).on_hover_text(crate::i18n::t("Reverse the order")).clicked() {
+        if ui.button(if v.ascending { "▲" } else { "▼" }).host_hover_text(crate::i18n::t("Reverse the order")).clicked() {
             v.ascending = !v.ascending;
         }
         ui.separator();
@@ -266,7 +268,7 @@ pub fn contributors_ui(ui: &mut egui::Ui) {
     let counts = crate::i18n::fmt(crate::i18n::t("{n} contributors · {c} commits"), &[("n", &list.len().to_string()), ("c", &group(TOTAL_COMMITS))]);
     ui.label(RichText::new(counts).small().color(t.text_muted));
     ui.separator();
-    egui::ScrollArea::both().id_salt("credits_list").max_height(LIST_HEIGHT).auto_shrink([false, true]).show(ui, |ui| {
+    egui::ScrollArea::both().id_salt("credits_list").max_height(LIST_HEIGHT).auto_shrink([false, true]).host_show(ui, |ui| {
         if list.is_empty() {
             ui.label(crate::i18n::t("No contributor data was built into this copy."));
         } else if v.table {
@@ -278,7 +280,7 @@ pub fn contributors_ui(ui: &mut egui::Ui) {
                         ui.label(RichText::new("·").color(t.text_faint));
                     }
                     #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
-                    ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login)).on_hover_text(c.summary());
+                    ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login)).host_hover_text(c.summary());
                     #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
                     ui.label(c.name(v.names));
                 }
@@ -294,7 +296,7 @@ fn table(ui: &mut egui::Ui, list: &[&Contributor], v: &mut View) {
             let arrow = if v.key == k { if v.ascending { " ▲" } else { " ▼" } } else { "" };
             if ui
                 .button(RichText::new(format!("{}{arrow}", crate::i18n::t(k.label().1))).strong())
-                .on_hover_text(crate::i18n::t(k.label().0))
+                .host_hover_text(crate::i18n::t(k.label().0))
                 .clicked()
             {
                 if v.key == k {
@@ -308,7 +310,7 @@ fn table(ui: &mut egui::Ui, list: &[&Contributor], v: &mut View) {
         ui.end_row();
         for c in list {
             #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
-            ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login)).on_hover_text(c.summary());
+            ui.hyperlink_to(c.name(v.names), format!("https://github.com/{}", c.login)).host_hover_text(c.summary());
             #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
             ui.label(c.name(v.names));
             ui.label(group(c.prs));
@@ -332,7 +334,7 @@ pub fn models_ui(ui: &mut egui::Ui) {
         return;
     }
     let assisted: u64 = MODELS.iter().map(|m| m.commits).max().unwrap_or(0).max(1);
-    egui::ScrollArea::both().id_salt("credits_models").max_height(LIST_HEIGHT).auto_shrink([false, true]).show(ui, |ui| {
+    egui::ScrollArea::both().id_salt("credits_models").max_height(LIST_HEIGHT).auto_shrink([false, true]).host_show(ui, |ui| {
         egui::Grid::new("credits_models").striped(true).num_columns(6).show(ui, |ui| {
             for h in MODEL_COLUMNS {
                 ui.label(RichText::new(crate::i18n::t(h)).strong());

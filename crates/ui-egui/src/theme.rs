@@ -42,6 +42,21 @@ impl ThemePreference {
 #[derive(Clone, Copy, Debug)]
 pub struct Tokens {
     pub kind: ThemeKind,
+    pub dialog: Color32,
+    pub popup: Color32,
+    pub toast: Color32,
+    pub tooltip: Color32,
+    pub toolstrip: Color32,
+    pub scrollbar: Color32,
+    pub scrollbar_thumb: Color32,
+    pub backstage_nav: Color32,
+    pub backstage_content: Color32,
+    pub menu: Color32,
+    pub on_accent: Color32,
+    pub success: Color32,
+    pub warning: Color32,
+    pub danger: Color32,
+
     /// Title/tab strip.
     pub titlebar: Color32,
     /// Mode bar, panels.
@@ -73,6 +88,20 @@ impl Tokens {
         match kind {
             ThemeKind::Light => Self {
                 kind,
+                dialog: Color32::WHITE,
+                popup: Color32::WHITE,
+                toast: Color32::WHITE,
+                tooltip: Color32::WHITE,
+                toolstrip: Color32::WHITE,
+                scrollbar: Color32::WHITE,
+                scrollbar_thumb: Color32::WHITE,
+                backstage_nav: Color32::WHITE,
+                backstage_content: Color32::WHITE,
+                menu: Color32::WHITE,
+                on_accent: Color32::WHITE,
+                success: Color32::from_rgb(0x2D, 0x9D, 0x5B),
+                warning: Color32::from_rgb(0xE8, 0x8A, 0x1A),
+                danger: Color32::from_rgb(0xD3, 0x2F, 0x2F),
                 titlebar: Color32::from_rgb(0xE9, 0xE9, 0xEB),
                 chrome: Color32::from_rgb(0xFF, 0xFF, 0xFF),
                 panel: Color32::from_rgb(0xFF, 0xFF, 0xFF),
@@ -97,6 +126,20 @@ impl Tokens {
             },
             ThemeKind::Dark => Self {
                 kind,
+                dialog: Color32::from_rgb(0x2E, 0x2E, 0x33),
+                popup: Color32::from_rgb(0x2E, 0x2E, 0x33),
+                toast: Color32::from_rgb(0x2E, 0x2E, 0x33),
+                tooltip: Color32::from_rgb(0x2E, 0x2E, 0x33),
+                toolstrip: Color32::from_rgb(0x26, 0x26, 0x2A),
+                scrollbar: Color32::from_rgb(0x26, 0x26, 0x2A),
+                scrollbar_thumb: Color32::from_rgb(0x2E, 0x2E, 0x33),
+                backstage_nav: Color32::from_rgb(0x26, 0x26, 0x2A),
+                backstage_content: Color32::from_rgb(0x26, 0x26, 0x2A),
+                menu: Color32::from_rgb(0x2E, 0x2E, 0x33),
+                on_accent: Color32::WHITE,
+                success: Color32::from_rgb(0x2D, 0x9D, 0x5B),
+                warning: Color32::from_rgb(0xE8, 0x8A, 0x1A),
+                danger: Color32::from_rgb(0xD3, 0x2F, 0x2F),
                 titlebar: Color32::from_rgb(0x1B, 0x1B, 0x1E),
                 chrome: Color32::from_rgb(0x26, 0x26, 0x2A),
                 panel: Color32::from_rgb(0x26, 0x26, 0x2A),
@@ -447,6 +490,8 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     v.menu_corner_radius = CornerRadius::same(8);
     v.window_shadow = egui::Shadow { offset: [0, 8], blur: 28, spread: 0, color: Color32::from_black_alpha(if t.dark() { 110 } else { 38 }) };
     v.popup_shadow = egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark() { 90 } else { 30 }) };
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    host_visuals(&mut v, &t);
     for w in [&mut v.widgets.noninteractive, &mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
         w.corner_radius = CornerRadius::same(t.radius);
         w.fg_stroke.color = t.text;
@@ -538,6 +583,264 @@ pub fn contrast(a: Color32, b: Color32) -> f32 {
 /// be lost.
 pub fn readable(color: Color32, background: Color32, text: Color32) -> Color32 {
     (0..=4).map(|step| color.lerp_to_gamma(text, step as f32 / 4.0)).find(|c| contrast(*c, background) >= 3.0).unwrap_or(text)
+}
+
+#[cfg(any(test, all(feature = "embedded", target_arch = "wasm32")))]
+fn host_visuals(v: &mut egui::Visuals, t: &Tokens) {
+    v.window_fill = t.popup;
+    v.panel_fill = t.panel;
+    v.override_text_color = Some(t.text);
+    v.weak_text_color = Some(t.text_muted);
+    v.code_bg_color = t.field;
+    v.warn_fg_color = t.warning;
+    v.error_fg_color = t.danger;
+    v.text_cursor.stroke.color = t.text;
+    v.ime_composition.active_underline_stroke.color = t.accent;
+    v.ime_composition.inactive_underline_stroke.color = t.border;
+    v.widgets.open.bg_fill = t.pressed;
+    v.widgets.noninteractive.bg_fill = t.panel;
+    v.widgets.noninteractive.weak_bg_fill = t.panel;
+    v.widgets.active.bg_stroke.color = t.border;
+    v.widgets.open.bg_stroke.color = t.border;
+    v.widgets.open.fg_stroke.color = t.text;
+    v.window_shadow.color = t.page_shadow;
+    v.popup_shadow.color = t.page_shadow;
+}
+
+/// Resolve editor chrome only. Callers deliberately retain document colours and image tints.
+pub(crate) fn surface(ctx: &egui::Context, slot: &str, fallback: Color32) -> Color32 {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        let t = Tokens::get(ctx);
+        return match slot {
+            "dialog" => t.dialog,
+            "popup" => t.popup,
+            "toast" => t.toast,
+            "tooltip" => t.tooltip,
+            "toolstrip" => t.toolstrip,
+            "scrollbar" => t.scrollbar,
+            "scrollbar_thumb" => t.scrollbar_thumb,
+            "backstage_nav" => t.backstage_nav,
+            "backstage_content" => t.backstage_content,
+            "menu" => t.menu,
+            "on_accent" => t.on_accent,
+            "success" => t.success,
+            "warning" => t.warning,
+            "danger" => t.danger,
+            "panel" => t.panel,
+            "text" => t.text,
+            "icon" => t.icon,
+            "accent" => t.accent,
+            "accent_soft" => t.accent_soft,
+            "field" => t.field,
+            "hover" => t.hover,
+            "pressed" => t.pressed,
+            "border" => t.border,
+            "page_shadow" => t.page_shadow,
+            "text_dim" => t.text_muted,
+            _ => fallback,
+        };
+    }
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        let _ = (ctx, slot);
+        fallback
+    }
+}
+
+pub(crate) fn modal_frame(ctx: &egui::Context) -> egui::Frame {
+    let frame = egui::Frame::popup(&ctx.global_style());
+    frame.fill(surface(ctx, "dialog", frame.fill))
+}
+
+pub(crate) fn dialog_frame(ctx: &egui::Context) -> egui::Frame {
+    let frame = egui::Frame::window(&ctx.global_style());
+    frame.fill(surface(ctx, "dialog", frame.fill))
+}
+
+#[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+pub(crate) fn tooltip_frame(ctx: &egui::Context) -> egui::Frame {
+    let frame = egui::Frame::popup(&ctx.global_style());
+    frame.fill(surface(ctx, "tooltip", frame.fill))
+}
+
+/// Existing Response tooltip semantics, with a separately hostable frame on embedded web.
+pub(crate) trait HostHoverExt {
+    fn host_disabled_hover_text(self, text: impl Into<egui::WidgetText>) -> Self;
+    fn host_hover_text(self, text: impl Into<egui::WidgetText>) -> Self;
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    fn host_hover_ui(self, content: impl FnOnce(&mut egui::Ui)) -> Self;
+}
+impl HostHoverExt for egui::Response {
+    fn host_disabled_hover_text(self, text: impl Into<egui::WidgetText>) -> Self {
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+        {
+            self.on_disabled_hover_text(text)
+        }
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        {
+            let text = text.into();
+            let mut tip = egui::Tooltip::for_disabled(&self);
+            if tip.popup.is_open() {
+                tip.popup = tip.popup.frame(tooltip_frame(&self.ctx));
+            }
+            tip.show(|ui| {
+                ui.set_max_width(ui.spacing().tooltip_width);
+                ui.label(text);
+            });
+            self
+        }
+    }
+
+    fn host_hover_text(self, text: impl Into<egui::WidgetText>) -> Self {
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+        {
+            self.on_hover_text(text)
+        }
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        {
+            let text = text.into();
+            if self.ctx.has_accesskit_node(self.id) {
+                self.ctx.accesskit_node_builder(self.id, |node| {
+                    if node.description().is_none() {
+                        node.set_description(text.text());
+                    }
+                    if node.role() != egui::accesskit::Role::Label && node.labelled_by().is_empty() && node.label().is_none_or(str::is_empty) {
+                        node.set_label(text.text());
+                    }
+                });
+            }
+            self.host_hover_ui(|ui| {
+                ui.set_max_width(ui.spacing().tooltip_width);
+                ui.label(text);
+            })
+        }
+    }
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    fn host_hover_ui(self, content: impl FnOnce(&mut egui::Ui)) -> Self {
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+        {
+            self.on_hover_ui(content)
+        }
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        {
+            let mut tip = egui::Tooltip::for_enabled(&self);
+            if tip.popup.is_open() {
+                tip.popup = tip.popup.frame(tooltip_frame(&self.ctx));
+            }
+            tip.show(content);
+            self
+        }
+    }
+}
+
+/// Scope scrollbar paint colours without changing the document or the area's controls.
+pub(crate) trait HostScrollExt {
+    fn host_show<R>(self, ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> egui::scroll_area::ScrollAreaOutput<R>;
+    fn host_show_viewport<R>(self, ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui, egui::Rect) -> R) -> egui::scroll_area::ScrollAreaOutput<R>;
+    fn host_show_rows<R>(
+        self,
+        ui: &mut egui::Ui,
+        height: f32,
+        rows: usize,
+        add: impl FnOnce(&mut egui::Ui, std::ops::Range<usize>) -> R,
+    ) -> egui::scroll_area::ScrollAreaOutput<R>;
+}
+fn scroll_style(ui: &mut egui::Ui) -> egui::Visuals {
+    let original = ui.visuals().clone();
+    if crate::theme::HOST_EMBEDDED {
+        let t = Tokens::get(ui.ctx());
+        let foreground = ui.spacing().scroll.foreground_color;
+        let v = ui.visuals_mut();
+        v.extreme_bg_color = t.scrollbar;
+        for w in [&mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active] {
+            if foreground {
+                w.fg_stroke.color = t.scrollbar_thumb;
+            } else {
+                w.bg_fill = t.scrollbar_thumb;
+            }
+        }
+    }
+    original
+}
+impl HostScrollExt for egui::ScrollArea {
+    fn host_show<R>(self, ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> egui::scroll_area::ScrollAreaOutput<R> {
+        if !crate::theme::HOST_EMBEDDED {
+            return self.show(ui, add);
+        }
+        let original = scroll_style(ui);
+        let out = self.show(ui, |inner| {
+            *inner.visuals_mut() = original.clone();
+            add(inner)
+        });
+        *ui.visuals_mut() = original;
+        out
+    }
+    fn host_show_viewport<R>(self, ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui, egui::Rect) -> R) -> egui::scroll_area::ScrollAreaOutput<R> {
+        if !crate::theme::HOST_EMBEDDED {
+            return self.show_viewport(ui, add);
+        }
+        let original = scroll_style(ui);
+        let out = self.show_viewport(ui, |inner, rect| {
+            *inner.visuals_mut() = original.clone();
+            add(inner, rect)
+        });
+        *ui.visuals_mut() = original;
+        out
+    }
+    fn host_show_rows<R>(
+        self,
+        ui: &mut egui::Ui,
+        height: f32,
+        rows: usize,
+        add: impl FnOnce(&mut egui::Ui, std::ops::Range<usize>) -> R,
+    ) -> egui::scroll_area::ScrollAreaOutput<R> {
+        if !crate::theme::HOST_EMBEDDED {
+            return self.show_rows(ui, height, rows, add);
+        }
+        let original = scroll_style(ui);
+        let out = self.show_rows(ui, height, rows, |inner, range| {
+            *inner.visuals_mut() = original.clone();
+            add(inner, range)
+        });
+        *ui.visuals_mut() = original;
+        out
+    }
+}
+
+/// The host policy is a no-op unless the embedded web target is selected.
+pub(crate) const HOST_EMBEDDED: bool = cfg!(all(feature = "embedded", target_arch = "wasm32"));
+pub(crate) fn host_command_allowed(ctx: &egui::Context, id: &str) -> bool {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        crate::embedded::command_allowed(ctx, id)
+    }
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        let _ = (ctx, id);
+        true
+    }
+}
+
+#[cfg(test)]
+mod host_surface_tests {
+    use super::*;
+    #[test]
+    fn shared_stock_surfaces_do_not_keep_egui_default_colors() {
+        let mut t = Tokens::for_kind(ThemeKind::Light);
+        t.popup = Color32::from_rgb(17, 255, 133);
+        t.panel = Color32::from_rgb(245, 33, 199);
+        t.text = Color32::from_rgb(19, 22, 71);
+        let mut v = egui::Visuals::dark();
+        host_visuals(&mut v, &t);
+        assert_eq!(v.window_fill, t.popup);
+        assert_eq!(v.panel_fill, t.panel);
+        assert_eq!(v.override_text_color, Some(t.text));
+        assert_eq!(v.widgets.noninteractive.bg_fill, t.panel);
+        assert_eq!(v.text_cursor.stroke.color, t.text);
+        assert_eq!(v.widgets.open.bg_fill, t.pressed);
+        assert_eq!(v.ime_composition.active_underline_stroke.color, t.accent);
+    }
 }
 
 #[cfg(test)]

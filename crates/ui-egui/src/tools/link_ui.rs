@@ -110,13 +110,14 @@ pub(crate) fn page_input(cx: PageToolContext<'_>, links: &[LinkItem], view: &mut
 
 /// Outlines of the page's links (selected one bold) and the rectangle being drawn.
 pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, info: &DocInfo, links: &[LinkItem], view: &DocView, pointer: Option<Pos2>) {
+    let host_link_blue = crate::theme::surface(painter.ctx(), "accent", LINK_BLUE);
     for l in links.iter().filter(|l| l.page == page) {
         let r = screen_rect(xf, info, page, l.rect);
         let selected = view.links.selected == Some((page, l.index));
         painter.rect_stroke(
             r,
             CornerRadius::ZERO,
-            Stroke::new(if selected { 2.0 } else { 1.0 }, LINK_BLUE.gamma_multiply(if selected { 1.0 } else { 0.6 })),
+            Stroke::new(if selected { 2.0 } else { 1.0 }, host_link_blue.gamma_multiply(if selected { 1.0 } else { 0.6 })),
             egui::StrokeKind::Outside,
         );
     }
@@ -124,8 +125,8 @@ pub(crate) fn paint(painter: &egui::Painter, xf: &PageXform, page: usize, info: 
         && dp == page
     {
         let r = Rect::from_two_pos(start, p);
-        painter.rect_filled(r, CornerRadius::ZERO, LINK_BLUE.gamma_multiply(0.08));
-        painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, LINK_BLUE), egui::StrokeKind::Inside);
+        painter.rect_filled(r, CornerRadius::ZERO, host_link_blue.gamma_multiply(0.08));
+        painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, host_link_blue), egui::StrokeKind::Inside);
     }
 }
 

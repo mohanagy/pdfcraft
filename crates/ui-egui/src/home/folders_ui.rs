@@ -6,6 +6,7 @@
 //! listed on a worker thread and at most every few seconds while Home shows, so a slow, huge or
 //! offline synced folder never blocks the frame.
 
+use crate::theme::HostHoverExt as _;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::SystemTime;
 
@@ -316,13 +317,13 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             icons::paint(ui, icon, "folder", 20.0, t.icon);
             // Folder names and paths are file/path chrome: explicitly left to right, so an
             // Arabic location keeps its `.pdf`/extension at the visual end.
-            widgets::label_ltr(ui, name.clone(), theme::semibold(14.0), t.text).on_hover_text(folder);
+            widgets::label_ltr(ui, name.clone(), theme::semibold(14.0), t.text).host_hover_text(folder);
             ui.add_space(4.0);
             // Leave room for Unpin: a long location is cut short, never the button.
             let room = (ui.available_width() - 110.0).max(0.0);
             ui.scope(|ui| {
                 ui.set_max_width(room);
-                widgets::label_ltr(ui, location(folder), theme::regular(12.0), t.text_faint).on_hover_text(folder);
+                widgets::label_ltr(ui, location(folder), theme::regular(12.0), t.text_faint).host_hover_text(folder);
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let resp = widgets::ghost_button(ui, "x", tl!("Unpin"));
@@ -371,7 +372,7 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             let detail = ui.painter().text(rect.right_center() - vec2(12.0, 0.0), Align2::RIGHT_CENTER, detail, theme::regular(12.0), t.text_muted);
             let width = detail.left() - 16.0 - (rect.left() + 62.0);
             widgets::row_text(ui, rect.min + vec2(62.0, 19.0), f.name.as_str(), theme::medium(13.0), t.text, width);
-            if resp.on_hover_text(&f.path).clicked() {
+            if resp.host_hover_text(&f.path).clicked() {
                 open = Some(f.path.clone());
             }
         }

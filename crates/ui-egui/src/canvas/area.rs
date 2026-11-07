@@ -1,4 +1,5 @@
 use super::{LayerOp, PdfCraftApp, Pos2, Rect};
+use crate::theme::HostScrollExt as _;
 
 /// A validation badge drawn over a signature widget: the widget rectangle (user space), the verdict it shows, and its hover text.
 pub(crate) struct SignatureBadge {
@@ -45,7 +46,7 @@ pub(super) fn page_scroll<R>(
     if !fades {
         ui.spacing_mut().scroll.fade.strength = 0.0;
     }
-    let out = ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| scroll.show_viewport(ui, draw)).inner;
+    let out = ui.scope_builder(egui::UiBuilder::new().scope_id(id), |ui| scroll.host_show_viewport(ui, draw)).inner;
     ui.spacing_mut().scroll.fade.strength = strength;
     out
 }

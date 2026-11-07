@@ -3,11 +3,13 @@ use super::{
     Align2, Availability, Color32, CornerRadius, LeftPanel, PdfCraftApp, Rect, Sense, Stroke, TOOL_GROUPS, Tokens, ToolGroup, catalog, icons, theme,
     vec2, widgets,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 const COLLAPSED_TOOLS: usize = 14;
 
-fn hue(g: &ToolGroup) -> Color32 {
-    Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2])
+fn hue(ctx: &egui::Context, g: &ToolGroup) -> Color32 {
+    theme::surface(ctx, "icon", Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]))
 }
 
 pub fn left_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
@@ -47,7 +49,7 @@ pub(crate) fn panel_header(ui: &mut egui::Ui, t: &Tokens, title: &str, lead: Opt
         // must never expand the fixed-width sidebar or push the Close control off-screen.
         let title_width = (ui.available_width() - 26.0 - ui.spacing().item_spacing.x).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(tl!(title)).font(theme::semibold(15.5)).color(t.text)).truncate())
-            .on_hover_text(tl!(title));
+            .host_hover_text(tl!(title));
         if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
             close = true;
         }
@@ -78,7 +80,7 @@ fn all_tools(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     if close {
         app.left_open = false;
     }
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| {
         clear_of_scrollbar(ui);
         ui.add_space(2.0);
         let shown = if app.all_tools_expanded { TOOL_GROUPS.len() } else { COLLAPSED_TOOLS.min(TOOL_GROUPS.len()) };
@@ -124,7 +126,7 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, is_pinned: bool) -> (e
     let press = theme::Press::track(ui, &resp);
     press.wash(ui, rect, 6, false);
     let body = rect.translate(press.offset());
-    icons::paint(ui, Rect::from_min_size(body.min + vec2(6.0, 7.0), vec2(20.0, 20.0)), g.icon, 19.0, hue(g));
+    icons::paint(ui, Rect::from_min_size(body.min + vec2(6.0, 7.0), vec2(20.0, 20.0)), g.icon, 19.0, hue(ui.ctx(), g));
 
     let pin_rect = Rect::from_center_size(body.right_center() - vec2(14.0, 0.0), vec2(22.0, 22.0));
     let pin_resp = ui.interact(pin_rect, ui.scope_id().with(("pin_toggle_row", g.id)), Sense::click());
@@ -133,7 +135,11 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, is_pinned: bool) -> (e
 
     let pin_space = 26.0;
     let badge_or_hint_reserved = match (g.badge, g.availability) {
-        (Some(b), _) => ui.fonts_mut(|f| f.layout_no_wrap(tl!(b).to_owned(), theme::semibold(9.5), Color32::WHITE).size().x) + 18.0,
+        (Some(b), _) => {
+            ui.fonts_mut(|f| {
+                f.layout_no_wrap(tl!(b).to_owned(), theme::semibold(9.5), crate::theme::surface(ui.ctx(), "on_accent", Color32::WHITE)).size().x
+            }) + 18.0
+        }
         (None, Availability::Planned(m)) if resp.hovered() => {
             let hint = format!("{} · {m}", tl!("Planned"));
             ui.fonts_mut(|f| f.layout_no_wrap(hint, theme::medium(10.5), t.text_faint).size().x) + 10.0
@@ -147,10 +153,12 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, is_pinned: bool) -> (e
         (Some(b), _) => {
             let font = theme::semibold(9.5);
             let badge = tl!(b);
-            let w = ui.fonts_mut(|f| f.layout_no_wrap(badge.to_string(), font.clone(), Color32::WHITE).size().x);
+            let w = ui.fonts_mut(|f| {
+                f.layout_no_wrap(badge.to_string(), font.clone(), crate::theme::surface(ui.ctx(), "on_accent", Color32::WHITE)).size().x
+            });
             let r = Rect::from_center_size(body.right_center() - vec2(pin_space + w / 2.0 + 4.0, 0.0), vec2(w + 10.0, 16.0));
             ui.painter().rect_filled(r, CornerRadius::same(4), t.badge_new);
-            ui.painter().text(r.center(), Align2::CENTER_CENTER, badge, font, Color32::WHITE);
+            ui.painter().text(r.center(), Align2::CENTER_CENTER, badge, font, crate::theme::surface(ui.ctx(), "on_accent", Color32::WHITE));
         }
         // Planned tools: a quiet milestone hint instead of a chip, so the list stays calm.
         (None, Availability::Planned(m)) if resp.hovered() => {
@@ -180,18 +188,23 @@ fn tool_row(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, is_pinned: bool) -> (e
         icons::paint(ui, pin_rect.shrink(3.0), "pin", 15.0, pin_tint);
         let tip = if is_pinned { tl!("Unpin from Home") } else { tl!("Pin to Home") };
         pin_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tip));
-        if theme::hand(pin_resp).on_hover_text(tip).clicked() {
+        if theme::hand(pin_resp).host_hover_text(tip).clicked() {
             pin_clicked = true;
         }
     }
 
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     let tip = match g.availability {
         Availability::Ready => tl!("Available").to_string(),
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         Availability::Planned(m) => format!("{} {m} — {}", tl!("Planned for milestone"), tl!("open to see what it will include")),
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         Availability::Provider => tl!("Optional: needs an AI provider you configure").into(),
     };
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    let tip = if g.availability == Availability::Ready { tl!("Available").to_owned() } else { String::new() };
     let tip = if clipped { format!("{} — {tip}", tl!(g.label)) } else { tip };
-    (theme::hand(resp).on_hover_text(tip), pin_clicked)
+    (theme::hand(resp).host_hover_text(tip), pin_clicked)
 }
 
 /// Draw the detail view for one tool group, dispatching its commands and tool-specific panels.
@@ -208,6 +221,7 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
     if close {
         app.left_open = false;
     }
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     if let Availability::Planned(m) = g.availability {
         egui::Frame::NONE.fill(t.accent_soft).corner_radius(CornerRadius::same(8)).inner_margin(egui::Margin::same(10)).show(ui, |ui| {
             ui.set_width(ui.available_width());
@@ -231,7 +245,9 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
     if g.id == "form" {
         ui.horizontal(|ui| {
             let label = if app.form_preview { "Edit fields" } else { "Preview" };
-            if widgets::pill_button(ui, tl!(label), app.form_preview).on_hover_text(tl!("Try the form as people filling it in will see it")).clicked()
+            if widgets::pill_button(ui, tl!(label), app.form_preview)
+                .host_hover_text(tl!("Try the form as people filling it in will see it"))
+                .clicked()
             {
                 app.form_preview = !app.form_preview;
                 if app.form_preview {
@@ -246,12 +262,18 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
     let footer = g.id == "redact";
     let marks = if footer { app.active_ids().and_then(|(_, id)| app.session.get(id)).map_or(0, |d| d.redaction_marks()) } else { 0 };
     let list_h = if footer { (ui.available_height() - 52.0).max(80.0) } else { ui.available_height() };
-    egui::ScrollArea::vertical().auto_shrink([false, false]).max_height(list_h).show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).max_height(list_h).host_show(ui, |ui| {
         clear_of_scrollbar(ui);
         ui.add_space(2.0);
         for s in g.sections {
+            if crate::theme::HOST_EMBEDDED && !s.items.iter().any(|item| crate::theme::host_command_allowed(ui.ctx(), item.command)) {
+                continue;
+            }
             widgets::section_title(ui, tl!(s.title));
             for item in s.items {
+                if crate::theme::HOST_EMBEDDED && !crate::theme::host_command_allowed(ui.ctx(), item.command) {
+                    continue;
+                }
                 if g.id == "fill_sign" && (item.command.starts_with("sign.fill.signature") || item.command.starts_with("sign.fill.initials")) {
                     continue;
                 }
@@ -267,10 +289,14 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
                     Rect::from_min_size(body.min + vec2(6.0, 8.0), vec2(18.0, 18.0)),
                     item.icon,
                     17.0,
-                    if ready { hue(g) } else { t.text_faint },
+                    if ready { hue(ui.ctx(), g) } else { t.text_faint },
                 );
                 let (chip, fill, cfg) = match item.availability {
-                    Availability::Ready => (tl!("Ready"), Color32::from_rgb(0xDD, 0xF3, 0xE4), Color32::from_rgb(0x1E, 0x7B, 0x43)),
+                    Availability::Ready => (
+                        tl!("Ready"),
+                        theme::surface(ui.ctx(), "hover", Color32::from_rgb(0xDD, 0xF3, 0xE4)),
+                        theme::surface(ui.ctx(), "text", Color32::from_rgb(0x1E, 0x7B, 0x43)),
+                    ),
                     Availability::Planned(m) => (m, t.pressed, t.text_muted),
                     Availability::Provider => ("AI", t.pressed, t.text_muted),
                 };
@@ -281,7 +307,7 @@ fn tool_detail(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static
                 row_label(ui, tl!(item.label), theme::regular(13.0), fg, body.left_center() + vec2(34.0, 0.0), r.left() - body.left() - 42.0);
                 ui.painter().rect_filled(r, CornerRadius::same(4), fill);
                 ui.painter().text(r.center(), Align2::CENTER_CENTER, chip_label, font, cfg);
-                let resp = theme::hand(resp).on_hover_text(format!("{} — {}", tl!(item.label), item.command));
+                let resp = theme::hand(resp).host_hover_text(format!("{} — {}", tl!(item.label), item.command));
                 // An entry with further commands opens a menu; its caret goes before the chip.
                 if item.actions.is_empty() {
                     if resp.clicked() {

@@ -1,6 +1,7 @@
 use super::files::{CombineFile, CombineView, Lock, RowAction};
 use super::table::{TableEvents, table};
 use super::{Align, BTreeSet, CornerRadius, ERROR, Layout, Modifiers, PdfCraftApp, Rect, Stroke, Tokens, icons, theme, vec2, widgets};
+use crate::theme::HostHoverExt as _;
 
 /// The Combine files page.
 pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
@@ -80,7 +81,7 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 let response = ui.add_enabled_ui(blocker.is_none(), |ui| widgets::icon_pill(ui, "files", tl!("Combine"), true)).inner;
                 if let Some(why) = &blocker {
-                    response.clone().on_disabled_hover_text(why);
+                    response.clone().host_disabled_hover_text(why);
                 }
                 if response.clicked() {
                     combine = true;
@@ -104,7 +105,7 @@ pub(crate) fn page(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             let open_docs: Vec<(usize, String)> =
                 app.views.iter().enumerate().filter_map(|(i, _)| crate::canvas::tab_label(app, i).map(|name| (i, name))).collect();
             let response = ui.add_enabled_ui(!open_docs.is_empty(), |ui| widgets::icon_pill(ui, "file-plus", tl!("Add open documents"), false)).inner;
-            response.clone().on_disabled_hover_text(tl!("No documents are open"));
+            response.clone().host_disabled_hover_text(tl!("No documents are open"));
             egui::Popup::menu(&response).show(|ui| {
                 if open_docs.len() > 1 && ui.button(tl!("All open documents")).clicked() {
                     app.add_open_documents(&open_docs.iter().map(|(i, _)| *i).collect::<Vec<_>>());
@@ -290,35 +291,38 @@ fn skip_prompt(app: &mut PdfCraftApp, ctx: &egui::Context) {
         left_out.push((f.name.as_str(), f.problem.as_deref().unwrap_or_default()));
     }
     let mut choice: Option<bool> = None;
-    let modal = egui::Modal::new(egui::Id::unique("combine-skip")).show(ctx, |ui| {
-        ui.set_width(460.0);
-        ui.horizontal(|ui| {
-            ui.add(icons::image("triangle-alert", 22.0, ERROR));
-            ui.add(egui::Label::new(egui::RichText::new(tl!("Leave out files that can't be read?")).font(theme::semibold(16.0))).wrap());
-        });
-        ui.add_space(6.0);
-        ui.label(egui::RichText::new(tl!("These files can't be read, so they won't be in the combined PDF:")).color(t.text_muted));
-        ui.add_space(6.0);
-        for (name, why) in left_out.iter().take(SKIP_PROMPT_NAMES) {
-            ui.horizontal_wrapped(|ui| {
-                ui.label(egui::RichText::new(format!("• {name}")).strong());
-                ui.label(egui::RichText::new(*why).color(t.text_muted));
+    let modal = egui::Modal::new(egui::Id::unique("combine-skip"))
+        .frame(crate::theme::modal_frame(ctx))
+        .backdrop_color(crate::theme::surface(ctx, "page_shadow", egui::Color32::from_black_alpha(100)))
+        .show(ctx, |ui| {
+            ui.set_width(460.0);
+            ui.horizontal(|ui| {
+                ui.add(icons::image("triangle-alert", 22.0, ERROR));
+                ui.add(egui::Label::new(egui::RichText::new(tl!("Leave out files that can't be read?")).font(theme::semibold(16.0))).wrap());
             });
-        }
-        if left_out.len() > SKIP_PROMPT_NAMES {
-            let more = (left_out.len() - SKIP_PROMPT_NAMES).to_string();
-            ui.label(egui::RichText::new(crate::i18n::fmt(tl!("and {n} more"), &[("n", &more)])).color(t.text_muted));
-        }
-        ui.add_space(14.0);
-        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if widgets::pill_button(ui, tl!("Combine the rest"), true).clicked() {
-                choice = Some(true);
+            ui.add_space(6.0);
+            ui.label(egui::RichText::new(tl!("These files can't be read, so they won't be in the combined PDF:")).color(t.text_muted));
+            ui.add_space(6.0);
+            for (name, why) in left_out.iter().take(SKIP_PROMPT_NAMES) {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(egui::RichText::new(format!("• {name}")).strong());
+                    ui.label(egui::RichText::new(*why).color(t.text_muted));
+                });
             }
-            if widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
-                choice = Some(false);
+            if left_out.len() > SKIP_PROMPT_NAMES {
+                let more = (left_out.len() - SKIP_PROMPT_NAMES).to_string();
+                ui.label(egui::RichText::new(crate::i18n::fmt(tl!("and {n} more"), &[("n", &more)])).color(t.text_muted));
             }
+            ui.add_space(14.0);
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                if widgets::pill_button(ui, tl!("Combine the rest"), true).clicked() {
+                    choice = Some(true);
+                }
+                if widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
+                    choice = Some(false);
+                }
+            });
         });
-    });
     if choice.is_none() && modal.should_close() {
         choice = Some(false);
     }
@@ -430,7 +434,7 @@ fn group(ui: &mut egui::Ui, t: &Tokens, edge: f32, width: f32) {
 
 /// A toolbar icon button, disabled with a reason.
 fn tool(ui: &mut egui::Ui, enabled: bool, icon: &str, label: &str, disabled_why: &str) -> egui::Response {
-    ui.add_enabled_ui(enabled, |ui| icons::button(ui, icon, 30.0, false, label)).inner.on_disabled_hover_text(disabled_why)
+    ui.add_enabled_ui(enabled, |ui| icons::button(ui, icon, 30.0, false, label)).inner.host_disabled_hover_text(disabled_why)
 }
 
 /// Whether a file can be shown as its pages: readable, unlocked, and adding more than one.
@@ -559,7 +563,7 @@ fn zoom_controls(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, edge: f32
             egui::Button::new(egui::RichText::new(format!("{:.0}%", zoom * 100.0)).font(theme::medium(12.0)).color(t.text_muted)).frame(false);
         let percent = ui.add_sized([44.0, 30.0], percent);
         percent.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!("Reset page size")));
-        if percent.on_hover_text(tl!("Reset page size")).clicked() {
+        if percent.host_hover_text(tl!("Reset page size")).clicked() {
             app.combine_tab.zoom_request = Some(1.0);
         }
         let mut value = zoom;
@@ -568,7 +572,7 @@ fn zoom_controls(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, edge: f32
         // Read out as a percentage, as shown beside it.
         slider.widget_info(|| egui::WidgetInfo::slider(true, f64::from(value * 100.0).round(), tl!("Page size")));
         app.combine_tab.zoom_slider = Some(slider.id);
-        if slider.on_hover_text(tl!("Page size")).changed() {
+        if slider.host_hover_text(tl!("Page size")).changed() {
             app.combine_tab.zoom_request = Some(value);
         }
         let smaller = ui.add_enabled_ui(zoom > *ZOOM_RANGE.start(), |ui| icons::button(ui, "zoom-out", 30.0, false, tl!("Smaller pages"))).inner;
@@ -626,12 +630,12 @@ fn add_menu(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             app.combine_dialog();
             ui.close();
         }
-        if item(ui, "folder", tl!("Add folder…")).on_hover_text(tl!("Every PDF, image and text file in the folder")).clicked() {
+        if item(ui, "folder", tl!("Add folder…")).host_hover_text(tl!("Every PDF, image and text file in the folder")).clicked() {
             app.combine_add_folder(false);
             ui.close();
         }
         if item(ui, "folder-open", tl!("Add folder and subfolders…"))
-            .on_hover_text(tl!("Every PDF, image and text file in the folder and the folders inside it"))
+            .host_hover_text(tl!("Every PDF, image and text file in the folder and the folders inside it"))
             .clicked()
         {
             app.combine_add_folder(true);

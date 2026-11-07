@@ -80,7 +80,7 @@ impl PdfCraftApp {
     /// contents, undo history); view state it can't see is checked here.
     pub(crate) fn command_enabled(&self, spec: &CommandSpec) -> bool {
         #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
-        if self.ctx.as_ref().is_some_and(|ctx| !crate::embedded::command_allowed(ctx, spec.id)) {
+        if self.ctx.as_ref().is_some_and(|ctx| !crate::theme::host_command_allowed(ctx, spec.id)) {
             return false;
         }
         // Undo and Redo act on the Combine files list while its tab shows.
@@ -112,7 +112,7 @@ impl PdfCraftApp {
     /// open documents, keeps running. Edits are applied to a copy, so the document is unchanged.
     pub fn execute(&mut self, id: &str) -> bool {
         #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
-        if self.ctx.as_ref().is_some_and(|ctx| !crate::embedded::command_allowed(ctx, id)) {
+        if self.ctx.as_ref().is_some_and(|ctx| !crate::theme::host_command_allowed(ctx, id)) {
             return false;
         }
         match pdfcraft_engine::guard(|| self.execute_unguarded(id)) {

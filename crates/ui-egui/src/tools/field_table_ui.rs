@@ -7,6 +7,7 @@
 //! prepared or changes in any way (a page rotated, moved or deleted, an edit undone), and adds the
 //! table there.
 
+use crate::theme::HostScrollExt as _;
 use std::ops::RangeInclusive;
 use std::sync::Arc;
 
@@ -159,6 +160,7 @@ pub(crate) fn show(app: &mut PdfCraftApp, ctx: &egui::Context) {
     let mut choice = None;
     let mut laid = None;
     egui::Window::new(tl!("Text Field Table"))
+        .frame(crate::theme::dialog_frame(ctx))
         .id(egui::Id::unique("field_table_window"))
         .open(&mut open)
         .collapsible(false)
@@ -203,6 +205,7 @@ fn close(app: &mut PdfCraftApp) {
 /// The window's controls, the names the table will have, and why it can't be added if it can't.
 /// Returns what was chosen and the table as it now stands, laid out and checked.
 fn body(ui: &mut egui::Ui, d: &mut FieldTableDraft, info: &PageInfo, form: &[FormField], t: &theme::Tokens) -> (Option<Choice>, Arc<Laid>) {
+    let host_error_red = crate::theme::surface(ui.ctx(), "danger", ERROR_RED);
     let columns = d.table.columns.len();
     egui::Grid::new("field_table_grid").num_columns(2).spacing([14.0, 8.0]).min_col_width(120.0).show(ui, |ui| {
         ui.label(tl!("Rows"));
@@ -273,7 +276,7 @@ fn body(ui: &mut egui::Ui, d: &mut FieldTableDraft, info: &PageInfo, form: &[For
         }
     };
     if scrolls {
-        egui::ScrollArea::vertical().max_height(180.0).show(ui, column_fields);
+        egui::ScrollArea::vertical().max_height(180.0).host_show(ui, column_fields);
     } else {
         column_fields(ui);
     }
@@ -295,7 +298,7 @@ fn body(ui: &mut egui::Ui, d: &mut FieldTableDraft, info: &PageInfo, form: &[For
         });
     }
     if let Err(e) = &laid.edit {
-        ui.add(egui::Label::new(RichText::new(e.said(&i18n::words)).color(ERROR_RED).size(11.0)).wrap());
+        ui.add(egui::Label::new(RichText::new(e.said(&i18n::words)).color(host_error_red).size(11.0)).wrap());
     }
 
     ui.add_space(14.0);
@@ -336,6 +339,7 @@ fn stepper<N: egui::emath::Numeric>(ui: &mut egui::Ui, value: &mut N, range: Ran
 /// The columns as a bar with a divider between each two, dragged (or moved with the arrow keys once
 /// focused) to share the width differently.
 fn column_bar(ui: &mut egui::Ui, d: &mut FieldTableDraft, t: &theme::Tokens) {
+    let host_select_blue = crate::theme::surface(ui.ctx(), "accent", SELECT_BLUE);
     let (bar, _) = ui.allocate_exact_size(vec2(ui.available_width().max(100.0), 28.0), Sense::hover());
     let edges = |shares: &[f64]| -> Vec<f32> {
         let mut x = bar.left();
@@ -359,7 +363,7 @@ fn column_bar(ui: &mut egui::Ui, d: &mut FieldTableDraft, t: &theme::Tokens) {
         // The last column ends at the bar's edge, whatever rounding says.
         let right = if c + 1 == n { bar.right() } else { right.min(bar.right()) };
         let column = Rect::from_min_max(pos2(left, bar.top()), pos2(right, bar.bottom()));
-        painter.rect_filled(column, CornerRadius::ZERO, SELECT_BLUE.gamma_multiply(if c % 2 == 0 { 0.11 } else { 0.055 }));
+        painter.rect_filled(column, CornerRadius::ZERO, host_select_blue.gamma_multiply(if c % 2 == 0 { 0.11 } else { 0.055 }));
         if column.width() > 32.0 {
             painter.text(column.center(), egui::Align2::CENTER_CENTER, format!("{:.0}%", share * 100.0), theme::medium(11.0), t.text);
         }
@@ -367,7 +371,7 @@ fn column_bar(ui: &mut egui::Ui, d: &mut FieldTableDraft, t: &theme::Tokens) {
     }
     painter.rect_stroke(bar, CornerRadius::same(3), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
     for (i, &x) in edges(&shares).iter().enumerate().take(n.saturating_sub(1)) {
-        let stroke = if active == Some(i) { Stroke::new(3.0, SELECT_BLUE) } else { Stroke::new(1.5, t.border) };
+        let stroke = if active == Some(i) { Stroke::new(3.0, host_select_blue) } else { Stroke::new(1.5, t.border) };
         painter.line_segment([pos2(x, bar.top() + 1.0), pos2(x, bar.bottom() - 1.0)], stroke);
     }
 }
@@ -412,6 +416,9 @@ fn column_dividers(ui: &mut egui::Ui, d: &mut FieldTableDraft, bar: Rect, ends: 
 /// with the reason it can't be laid out. Only the cells in view are drawn, and only those with room
 /// for it get their name: a table can have 5,000 cells.
 pub(crate) fn paint_preview(painter: &egui::Painter, xf: &PageXform, page: usize, preview: &Preview) {
+    let host_select_blue = crate::theme::surface(painter.ctx(), "accent", SELECT_BLUE);
+    let host_error_red = crate::theme::surface(painter.ctx(), "danger", ERROR_RED);
+    let host_field_fill = crate::theme::surface(painter.ctx(), "accent_soft", crate::prepare::FIELD_FILL);
     if preview.page != page {
         return;
     }
@@ -430,22 +437,22 @@ pub(crate) fn paint_preview(painter: &egui::Painter, xf: &PageXform, page: usize
     };
     match &preview.laid.cells {
         Ok(cells) => {
-            painter.rect_stroke(outline, CornerRadius::ZERO, Stroke::new(1.0, SELECT_BLUE.gamma_multiply(0.3)), egui::StrokeKind::Outside);
+            painter.rect_stroke(outline, CornerRadius::ZERO, Stroke::new(1.0, host_select_blue.gamma_multiply(0.3)), egui::StrokeKind::Outside);
             for cell in cells {
                 let r = on_screen(cell.rect);
                 if !visible.intersects(r) {
                     continue;
                 }
-                painter.rect_filled(r, CornerRadius::ZERO, crate::prepare::FIELD_FILL);
-                painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.5, SELECT_BLUE), egui::StrokeKind::Inside);
+                painter.rect_filled(r, CornerRadius::ZERO, host_field_fill);
+                painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.5, host_select_blue), egui::StrokeKind::Inside);
                 if r.height() >= font.size + 2.0 && r.width() >= 24.0 {
-                    tag(r, cell.name.clone(), SELECT_BLUE);
+                    tag(r, cell.name.clone(), host_select_blue);
                 }
             }
         }
         Err(e) => {
-            painter.rect_stroke(outline, CornerRadius::ZERO, Stroke::new(1.5, ERROR_RED), egui::StrokeKind::Inside);
-            tag(outline, e.said(&i18n::words), ERROR_RED);
+            painter.rect_stroke(outline, CornerRadius::ZERO, Stroke::new(1.5, host_error_red), egui::StrokeKind::Inside);
+            tag(outline, e.said(&i18n::words), host_error_red);
         }
     }
 }

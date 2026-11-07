@@ -1,6 +1,8 @@
 use super::draft::{FieldDraft, FieldTab};
 use super::tabs::{actions_tab, calculate_tab, format_tab, validate_tab};
 use super::{BorderStyle, FieldFont, FormFieldKind, theme, widgets};
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// A check box for a `/Ff` bit (`inverted`: checked when the bit is clear).
 fn flag_box(ui: &mut egui::Ui, flags: &mut u32, bit: u32, inverted: bool, label: &str) {
@@ -271,12 +273,12 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                     widgets::section_title(ui, tl!("Item List"));
                     let mut remove = None;
                     let mut up = None;
-                    egui::ScrollArea::vertical().max_height(140.0).show(ui, |ui| {
+                    egui::ScrollArea::vertical().max_height(140.0).host_show(ui, |ui| {
                         for (i, o) in d.options.iter().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.label(o);
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    if ui.small_button(tl!("Delete")).on_hover_text(crate::i18n::fmt(tl!("Delete {o}"), &[("o", o)])).clicked() {
+                                    if ui.small_button(tl!("Delete")).host_hover_text(crate::i18n::fmt(tl!("Delete {o}"), &[("o", o)])).clicked() {
                                         remove = Some(i);
                                     }
                                     if i > 0 && ui.small_button(tl!("Up")).clicked() {

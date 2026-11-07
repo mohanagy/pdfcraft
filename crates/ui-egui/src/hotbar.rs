@@ -1,4 +1,6 @@
 //! A movable, persistent set of shortcuts to the shared command registry and core document tools.
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use egui::{Color32, CornerRadius, Rect, Sense, Stroke, vec2};
 use pdfcraft_engine::Edit;
 use pdfcraft_engine::commands::{COMMANDS, command};
@@ -112,7 +114,7 @@ impl Hotbar {
 fn settings_button(ui: &mut egui::Ui, cell: f32, picker_open: &mut bool) -> bool {
     let settings = ui
         .push_id("hotbar-settings", |ui| {
-            icons::button(ui, "settings", cell, false, tl!("Hotbar settings")).on_hover_text(tl!("Hotbar settings / add tools"))
+            icons::button(ui, "settings", cell, false, tl!("Hotbar settings")).host_hover_text(tl!("Hotbar settings / add tools"))
         })
         .inner;
     if settings.clicked() {
@@ -150,6 +152,9 @@ fn matches_search(spec: &pdfcraft_engine::commands::CommandSpec, query: &str) ->
 fn tool_buttons(ui: &mut egui::Ui, app: &PdfCraftApp, tools: &[String], cell: f32, run: &mut Option<&'static str>, remove: &mut Option<usize>) {
     for (index, id) in tools.iter().enumerate() {
         let Some(spec) = command(id) else { continue };
+        if !theme::host_command_allowed(ui.ctx(), id) {
+            continue;
+        }
         let active = crate::comments::CommentTool::from_command(id).is_some_and(|tool| app.quick_tool == crate::QuickTool::Comment(tool));
         let button = ui.add_enabled_ui(app.command_enabled(spec), |ui| icons::button(ui, spec.icon, cell, active, tl!(spec.label))).inner;
         if button.clicked() {
@@ -194,6 +199,9 @@ fn core_tool_buttons(ui: &mut egui::Ui, app: &mut PdfCraftApp, cell: f32, popup_
         }
         egui::Popup::menu(&resp).open_memory(open.then_some(egui::SetOpenCommand::Toggle)).align(popup_align).gap(6.0).show(|ui| {
             for tool in comments::GROUPS[g] {
+                if !theme::host_command_allowed(ui.ctx(), tool.command()) {
+                    continue;
+                }
                 let on = app.quick_tool == QuickTool::Comment(*tool);
                 let (row, click) = ui.allocate_exact_size(vec2(180.0, 28.0), Sense::click());
                 let press = theme::Press::track(ui, &click);
@@ -388,7 +396,7 @@ fn segmented_dock_picker(ui: &mut egui::Ui, bar: &mut Hotbar, t: &Tokens) {
     let changed = egui::ScrollArea::horizontal()
         .id_salt("hotbar-dock")
         .auto_shrink([false, true])
-        .show(ui, |ui| crate::dialogs::preferences::segmented_pill_choice(ui, t, &mut side, &options))
+        .host_show(ui, |ui| crate::dialogs::preferences::segmented_pill_choice(ui, t, &mut side, &options))
         .inner;
     if changed {
         // `place` accepts every side listed above.
@@ -429,13 +437,18 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
     let mut settings_clicked = false;
     let shown = egui::Area::new(id).order(egui::Order::Middle).fixed_pos(pos).constrain_to(bounds).show(&ctx, |ui| {
         let frame = if full_side {
-            egui::Frame::NONE.fill(t.chrome).corner_radius(egui::CornerRadius::ZERO).inner_margin(6)
+            egui::Frame::NONE.fill(crate::theme::surface(ui.ctx(), "toolstrip", t.chrome)).corner_radius(egui::CornerRadius::ZERO).inner_margin(6)
         } else {
             egui::Frame::new()
-                .fill(t.card)
+                .fill(crate::theme::surface(&ctx, "toolstrip", t.card))
                 .stroke(egui::Stroke::new(1.0, t.border))
                 .corner_radius(CornerRadius::same(12))
-                .shadow(egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark() { 100 } else { 28 }) })
+                .shadow(egui::Shadow {
+                    offset: [0, 4],
+                    blur: 16,
+                    spread: 0,
+                    color: crate::theme::surface(ui.ctx(), "page_shadow", Color32::from_black_alpha(if t.dark() { 100 } else { 28 })),
+                })
                 .inner_margin(6)
         };
         let frame_resp = frame.show(ui, |ui| {
@@ -455,7 +468,7 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
                         settings_clicked |= settings_button(ui, cell, &mut picker_open);
                         ui.add_space(4.0);
                         let remaining = ui.available_height().max(cell);
-                        egui::ScrollArea::vertical().max_height(remaining).show(ui, |ui| {
+                        egui::ScrollArea::vertical().max_height(remaining).host_show(ui, |ui| {
                             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                                 core_tool_buttons(ui, app, cell, popup_align, &t);
                                 active_tool_controls(ui, app, &t, true);
@@ -471,7 +484,7 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
                         settings_clicked |= settings_button(ui, cell, &mut picker_open);
                         ui.add_space(4.0);
                         let remaining = ui.available_width().max(cell);
-                        egui::ScrollArea::horizontal().max_height(cell).max_width(remaining).show(ui, |ui| {
+                        egui::ScrollArea::horizontal().max_height(cell).max_width(remaining).host_show(ui, |ui| {
                             ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                                 core_tool_buttons(ui, app, cell, popup_align, &t);
                                 active_tool_controls(ui, app, &t, false);
@@ -496,7 +509,7 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
                         }
                     }
                     let drag_label = tl!("Drag hotbar");
-                    let grip = grip.on_hover_text(drag_label).on_hover_cursor(egui::CursorIcon::Grab);
+                    let grip = grip.host_hover_text(drag_label).on_hover_cursor(egui::CursorIcon::Grab);
                     grip.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, drag_label));
                     if grip.dragged() && bar.dock.is_none() {
                         let delta = grip.drag_delta();
@@ -513,7 +526,7 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
                     if bar.vertical {
                         let fixed_overhead = grip_size.y + cell + 24.0;
                         let max_tools_length = (bounds.height() - fixed_overhead).max(cell);
-                        egui::ScrollArea::vertical().max_height(max_tools_length).show(ui, |ui| {
+                        egui::ScrollArea::vertical().max_height(max_tools_length).host_show(ui, |ui| {
                             ui.with_layout(layout, |ui| {
                                 core_tool_buttons(ui, app, cell, popup_align, &t);
                                 active_tool_controls(ui, app, &t, true);
@@ -530,7 +543,7 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
                         if !bar.tools.is_empty() {
                             ui.separator();
                             let scroll_max = (bounds.width() - cell - 50.0).max(cell);
-                            egui::ScrollArea::horizontal().max_height(cell).max_width(scroll_max).show(ui, |ui| {
+                            egui::ScrollArea::horizontal().max_height(cell).max_width(scroll_max).host_show(ui, |ui| {
                                 ui.with_layout(layout, |ui| {
                                     tool_buttons(ui, app, &bar.tools, cell, &mut run, &mut remove);
                                 });
@@ -596,10 +609,15 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
         .fixed_pos(picker_pos)
         .frame(
             egui::Frame::NONE
-                .fill(t.card)
+                .fill(crate::theme::surface(&ctx, "toolstrip", t.card))
                 .stroke(Stroke::new(1.0, t.border))
                 .corner_radius(CornerRadius::same(10))
-                .shadow(egui::Shadow { offset: [0, 6], blur: 20, spread: 0, color: Color32::from_black_alpha(if t.dark() { 120 } else { 35 }) })
+                .shadow(egui::Shadow {
+                    offset: [0, 6],
+                    blur: 20,
+                    spread: 0,
+                    color: crate::theme::surface(ui.ctx(), "page_shadow", Color32::from_black_alpha(if t.dark() { 120 } else { 35 })),
+                })
                 .inner_margin(egui::Margin::symmetric(14, 12)),
         )
         .show(&ctx, |ui| {
@@ -656,8 +674,8 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
             // Full-side strip checkbox
             let strip_hint = tl!("Extend the docked toolbar along the entire side. Choose a side above to enable.");
             ui.add_enabled(bar.dock.is_some(), crate::widgets::checkbox(&mut bar.full_side, tl!("Full-side strip")))
-                .on_hover_text(strip_hint)
-                .on_disabled_hover_text(strip_hint);
+                .host_hover_text(strip_hint)
+                .host_disabled_hover_text(strip_hint);
 
             ui.add_space(12.0);
             ui.separator();
@@ -690,9 +708,12 @@ pub(crate) fn show(app: &mut PdfCraftApp, area: Rect, page_left: Option<f32>, ui
 
             // Scrollable tools list with checkboxes
             let max_list_height = (screen.height() - 340.0).clamp(120.0, 220.0);
-            egui::ScrollArea::vertical().max_height(max_list_height).auto_shrink([false, false]).show(ui, |ui| {
+            egui::ScrollArea::vertical().max_height(max_list_height).auto_shrink([false, false]).host_show(ui, |ui| {
                 ui.spacing_mut().item_spacing.y = 5.0;
                 for spec in COMMANDS {
+                    if !theme::host_command_allowed(ui.ctx(), spec.id) {
+                        continue;
+                    }
                     if !matches_search(spec, &bar.search) {
                         continue;
                     }

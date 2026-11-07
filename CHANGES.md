@@ -1,8 +1,96 @@
-# Embedded web profile — rounds 1 and 2
+# Embedded web profile — rounds 1–3
 
 Local branch `embed/profile`, based on `8bb0528b`. No pushes. Application version 0.18.1; host protocol remains **1**.
 
 The normal feature-off application keeps its existing behavior. Embedded-specific UI, host and resource changes are gated to wasm32; selecting the feature on native does not activate the embedded interface. `embedded-lite` is a separate opt-in resource variant and implies `embedded`. No font binaries were added to either app repository. Package licence/notice files are retained; generic fixtures are attributed.
+
+
+## Round 3: host surfaces and available tools
+
+Protocol remains **1**. The two additional `configure.chrome` booleans are `fileNew` and `fileClose`; both default to **true**. Sending false removes the File entry and blocks its associated command/shortcut and command-search paths. These values merge and can be restored with true, just like the previous switches.
+
+```js
+{type:"pdfcraft:configure", chrome:{fileNew:false,fileClose:false},
+ theme:{dialog:"#ffb2ed",popup:"#b7ffce",toast:"#ffcc85",tooltip:"#e7c7ff",
+        toolstrip:"#95f4f0",scrollbar:"#ffbc7d",scrollbarThumb:"#6c138c",
+        backstageNav:"#79edaa",backstageContent:"#fcdf95"}}
+```
+
+The color grammar and validation are unchanged: #RGB, #RRGGBB or #RRGGBBAA, including alpha; camelCase and snake_case token names are accepted. Unknown keys and invalid values appear in `configured.ignored` and retain the previous value. No CSS, JavaScript or URL color values are accepted. New slots inherit already configured legacy slots if omitted, and independent region overrides win. Host colors apply only on the embedded wasm target. Theme/appearance controls are removed from that UI so the host remains the authority.
+
+### Region → host slot
+
+| Region | Slot(s) |
+|---|---|
+| Title bar / mode bar | `titlebar / chrome` |
+| Side panels / Home / cards | `panel, card` |
+| Dialog bodies / Preferences cards | `dialog` |
+| File menu and other menus, command palette, popups | `popup` |
+| File backstage navigation/content | `No separate backstage screen in this app; File is a menu. backstageNav/backstageContent are accepted common-palette slots but have no separate PDF region.` |
+| Floating / docked tool strips and Find bar | `toolstrip` |
+| Toast / progress notices | `toast, text, onAccent` |
+| Not saved acknowledgement notice | `dialog` |
+| Pointer and disabled tooltips | `tooltip` |
+| Scroll area tracks / thumbs, including document canvas | `scrollbar / scrollbarThumb` |
+| Fields, hover, pressed, borders | `field, hover, pressed, border, divider` |
+| Text / icons / accent foreground | `text, textMuted, textFaint, icon, onAccent` |
+| Semantic warning / error / password strength | `success, warning, danger` |
+| Pasteboard / selection / accents | `pasteboard, selected, accent, accentText, accentSoft, badgeNew`; editing/crop/form outlines use accent and their wash uses accentSoft |
+| Shadows / modal backdrop | `pageShadow` |
+
+Hover/pressed blends, outlines, shadows, stock widget fills and IME underlines use host tokens. Scroll-area styling is scoped: the scrollbar gets its own track/thumb palette while the area contents retain their original host widget palette. Dropdowns supplied by shared widgets inherit host foreground/field colors. Transparent layout frames, texture tint identity colors and measurement-only colors are not independent visible surfaces.
+
+Document paper, actual document text/graphics, imported images, swatches, document style/chart previews, print thumbnails and signature previews retain document colors. No font or other asset binary was added. Licensing and attribution text stays intact.
+
+### Removed or hidden in this round
+
+- AI assistant group and its bring-your-own-model text; all `ai.*` commands are blocked. The provider-backed catalog group is compiled out of embedded WASM. No provider upload implementation was present at this pin.
+- Secondary Organize placeholders (Page transitions and Page templates); unavailable comment tools in quick-tool flyouts and saved/custom hotbar choices.
+- Unsupported formatting placeholders: bulleted/numbered lists, paragraph spacing, unavailable alignment contexts, underline/superscript/subscript when unsupported, and added-text line-spacing/horizontal-scale controls. Working equivalents remain in contexts where they are implemented. Gaps disappear with the controls.
+- The wholly unfinished search-index and JavaScript tool groups. Individual Planned/provider items are compiled out of the catalog, and placeholder milestone/provider fallback toasts are compiled out.
+- Appearance card in Preferences (theme tiles, page-edge appearance and reading-color section), title-bar theme cycle/context menu, Display theme submenu and `view.theme*` commands/search entries.
+- On host request: File New blank PDF and Close/Close all (`create.blank`, `file.close`, `file.close_all`). Menus, search and keyboard dispatch obey the same host policy.
+- Network/update/download/community controls removed in round 1 remain excluded. No network/account/telemetry/provider settings are introduced.
+
+The source catalog labels Edit, Protect and Print Production as Planned roadmap groups even though they contain working Ready commands. Embedded builds retain their implemented Ready items and label these three groups Ready; unfinished items disappear. Desktop metadata stays unchanged. This prevents removing working editing/protection commands merely because their parent roadmap milestone is incomplete. A target-independent readiness policy and regression tests require exposed commands to be implemented and Ready. A separate deny list preserves the decision after non-ready catalog metadata has been compiled out.
+
+Non-ready command IDs removed/blocked in this round:
+
+`a11y.reading_order`, `actions.archive`, `actions.make_accessible`, `ai.ask`, `ai.summary`, `ai.translate`, `comment.cloud`, `comment.stamp`, `export.ps`, `export.xlsx`, `js.actions`, `js.console`, `js.document`, `measure.geo`, `ocr.correct`, `ocr.enhance`, `optimize.audit`, `page.transitions`, `preflight.run`, `prepress.convert_colors`, `prepress.hairlines`, `prepress.marks`, `prepress.output_preview`, `protect.certificate`, `sign.timestamp`, `standards.pdfua`, `standards.pdfx`.
+
+### Round 3 verification and release evidence
+
+Workspace embedded-feature unit tests: **3,995 passed, 0 failed, 5 ignored**. Strict all-targets embedded-feature Clippy, formatting, layering, asset and embedded WASM checks passed. The final affected engine/UI rerun passed **1,145 tests, 0 failed, 3 ignored** (overlapping the workspace run). The default CI still fails only the pre-existing native integration test `control::preferences_menu_and_shortcut_allow_switching_interface_languages` at `tests/it/control.rs:1088`, reproduced on the untouched pinned base. Later CI stages were not run after this stop; see `embedded-test/verification.json`.
+
+Both release builds completed with Binaryen `-Oz`. Exact byte accounting follows; categories sum to each file size. Resources are exact source matches in reconstructed WASM memory; `other` includes unmatched/transformed data and runtime/section overhead. These categories are not independent removable/compressed-download estimates.
+
+| Variant | Total bytes | Code | Fonts | Dictionaries | Locale data | Other |
+|---|---:|---:|---:|---:|---:|---:|
+| web | 60,871,524 | 34,455,787 | 9,383,424 | 0 | 13,168,961 | 3,863,352 |
+| web-lite | 51,868,243 | 34,430,440 | 4,228,160 | 0 | 9,349,993 | 3,859,650 |
+
+Full WASM changed from round 2's **60,910,375** to **60,871,524** bytes (-38,851); optional lite saves **9,003,281** bytes relative to this full build. Each file hash and resource attribution is in `embedded-test/size-web.json` / `size-web-lite.json`.
+
+Case-insensitive raw scans cover every final `.wasm` and `.js` in both outputs. Every hit has an offset, context and reason in `embedded-test/artifact-search.json` and `artifact-search-lite.json`; **zero unclassified hits**. Counts include non-actionable data:
+
+| Needle | Full hits | Lite hits |
+|---|---:|---:|
+| `discord` | 0 | 0 |
+| `getartcraft` | 0 | 0 |
+| `storytold` | 0 | 0 |
+| `github.com` | 12 | 12 |
+| `http://` | 484 | 444 |
+| `https://` | 73 | 59 |
+| `milestone` | 0 | 0 |
+| `bring your own` | 0 | 0 |
+| `provider` | 311 | 223 |
+
+Provider matches are unused translated catalog strings (including digital-signing/privacy text), local font/ICU diagnostics and Brotli dictionary bytes. They do not expose model/provider actions; unchanged full translation resources have not been byte-scrubbed. URL/hostname matches are document/XML/SVG format identifiers, licences/provenance, dependency diagnostics, parser tokens and Brotli dictionary bytes; the per-hit reports distinguish each source.
+
+The final full artifact passed all **11** harness result flags, including 34 loud theme settings accepted, ready/version/protocol, branding, rename, clean/dirty requestSave, positive/negative acknowledgements, timeout, blank clean open and Save As. Observed UI regions and removals are listed in `embedded-test/browser-results.json`. Shared unit coverage and visited screens support the surface changes; every possible dialog/hover state was not manually enumerated. Cross-browser and exhaustive document-fidelity acceptance remain unverified. Lite was built, measured and string-audited; this browser run used full embedded.
+
+
+The local test page includes `loud-theme.json` and sends a distinct loud color for every accepted color setting. Its manual checklist covers UI regions, hidden New/Close and their shortcuts, absent placeholder/AI search results, and removed Preferences sections. Protocol, branding, open/dirty/save/ack/timeout checks from round 2 remain available. Only generic fixtures are used.
 
 ## Build and deliverables
 
@@ -67,7 +155,7 @@ Protocol 1 has no request IDs. Saves are serialized while an acknowledgement is 
 
 ## Chrome switches
 
-Supported booleans: `titlebar`, `homeTab`, `openTab`, `modebar`. Unspecified controls stay visible. Hidden controls free their layout space. Disabled dedicated navigation/actions are filtered before dispatch; host-supplied bytes still open when the picker is hidden.
+Supported booleans: `fileNew`, `fileClose`, `titlebar`, `homeTab`, `openTab`, `modebar`. Unspecified controls stay visible. Hidden controls free their layout space. Disabled dedicated navigation/actions are filtered before dispatch; host-supplied bytes still open when the picker is hidden.
 
 Exactly what `titlebar:false` hides: **The whole top document-tab strip: Home/Open entries, all document tabs and their close/overflow controls, Combine tab, Settings, display-theme control, and Keyboard shortcuts button. The menu/mode/search/save/print row, tool panes, canvas and document keyboard shortcuts remain. This is the existing `titlebar:false` behavior; it was not broadened in round 2. `modebar:false` separately controls the menu/mode row.**
 
@@ -100,55 +188,6 @@ inspection; the generic PDF fixture uses a standard-14 Helvetica reference, with
 
 The full embedded build does not drop fonts or language resources in round 2. The optional `embedded-lite` feature removes selected non-Latin/Arabic/Hebrew shared faces and selected locale catalogs: `zh-hans`, `zh-hant`, `ja`, `ko`, `uk`, `ru`, `bg`, `sr`, `th`, `hi`, `te`, `ka` (where present). Latin-script resources and Arabic remain. A Hebrew face from the same licensed shared font checkout is retained. It is off by default. This is a resource experiment, not an assertion that every other script is gone. The pinned proofing crate has small unconditional supplements (including Russian) that remain; renderer/runtime Unicode tables remain as well.
 
-## Verification, measurements and audit
-
-- Full workspace unit run with embedded parser/state tests: **3,988 passed, 0 failed, 5 ignored**. The final host-focused regression run passed **5** tests; these overlap existing unit coverage and are not added to the workspace total.
-- Strict embedded-feature Clippy (`--all-targets --features embedded -- -D warnings`): **PASS**. Formatting and `git diff --check`: **PASS**.
-- Layers, asset attribution and default WASM checks: **PASS**.
-- Default full CI: **not green**. One native integration test, `control::preferences_menu_and_shortcut_allow_switching_interface_languages`, cannot find the Preferences row at `tests/it/control.rs:1088`. The exact same test fails on the unmodified pinned base `8bb0528b` with the same build inputs. No default-behavior repair was made. The CI stages after that failure were not run; layers/assets/default WASM checks were completed separately.
-- Full embedded browser protocol checks: **PASS** for ready/version/protocol, branding, rename, clean and real-dirty requestSave, positive/negative ack, visible 30-second timeout, blank clean open, and Save As. Titlebar-hidden Undo/Redo/Save/Find, theme/Arabic, invalid fields, and hide/restore were observed. File signatures were checked; this is not an exhaustive fidelity test.
-- Final full/lite release builds: **PASS**. Lite was measured and its Latin/Arabic/Hebrew resource retention checked; the complete browser run above uses the full build.
-- Detailed machine-readable evidence: [verification.json](embedded-test/verification.json) and [browser-results.json](embedded-test/browser-results.json).
-
-### WASM sizes
-
-| Build | Bytes | MiB |
-|---|---:|---:|
-| Unmodified pinned default baseline | 60,907,398 | 58.086 |
-| Full embedded | 60,910,375 | 58.089 |
-| Optional embedded-lite | 51,895,736 | 49.492 |
-| Full embedded change from baseline | +2,977 | +0.003 |
-| Lite reduction from full | 9,014,639 | 8.597 |
-
-Full WASM SHA-256: `b6d2f25e9645c1012a7dce9d7d4f6ec558c4d98a9c895cae32eeddfe0ebcb86d`. Lite SHA-256: `9787502247cbb22b7d53e3d4e107956d80d0165e026225fcb05914176da5ff1f`.
-
-| Byte category | Full | Lite |
-|---|---:|---:|
-| code | 34,451,537 | 34,426,199 |
-| fonts | 9,383,424 | 4,228,160 |
-| dictionaries | 0 | 0 |
-| locales | 13,208,640 | 9,378,312 |
-| other | 3,866,774 | 3,863,065 |
-
-Code is the complete WASM code section. Resources are exact source-byte matches against reconstructed active linear-memory data, counted only where bytes are stored in the WASM (wasm-opt omits zero runs). Identical resources are deduplicated. Other is all remaining bytes, including section framing, runtime/static tables, compressed or transformed resources and any unmatched data. Categories are byte accounting, not independent removable or compressed download sizes.
-Dictionaries here means identifiable spelling/hyphenation source data; PDF CMaps/encoding tables and transformed/unmatched resources belong to Other. These are uncompressed WASM file bytes, not HTTP transfer sizes. Detailed resource matches and hashes: [full breakdown](embedded-test/size-web.json), [lite breakdown](embedded-test/size-web-lite.json).
-
-### Built-artifact string audit
-
-Case-insensitive raw-byte searches over every generated `.wasm` and `.js`, including helper modules. Every hit has a zero-based byte offset, context and reason in [artifact-search.json](embedded-test/artifact-search.json). A substring is not evidence of an executable URL or request.
-
-| Needle | Remaining hits |
-|---|---:|
-| `discord` | 0 |
-| `getartcraft` | 0 |
-| `storytold` | 0 |
-| `github.com` | 12 |
-| `http://` | 484 |
-| `https://` | 73 |
-
-Remaining text is document/XML/SVG/PDF namespaces, local icon markup, parser scheme tokens, dependency diagnostics/shader provenance, translation text, document-action placeholders, licences/proofing data and the verified Brotli dictionary. There are no Discord/product/community destination hits.
-
-
 ## Files touched against the pinned base
 
 - `ATTRIBUTION.md`
@@ -159,6 +198,7 @@ Remaining text is document/XML/SVG/PDF namespaces, local icon markup, parser sch
 - `apps/pdfcraft-web/index-embedded.html`
 - `apps/pdfcraft-web/src/main.rs`
 - `crates/engine/Cargo.toml`
+- `crates/engine/src/catalog.rs`
 - `crates/engine/src/commands.rs`
 - `crates/engine/src/links.rs`
 - `crates/engine/src/session/view.rs`
@@ -167,34 +207,79 @@ Remaining text is document/XML/SVG/PDF namespaces, local icon markup, parser sch
 - `crates/ui-egui/Cargo.toml`
 - `crates/ui-egui/build.rs`
 - `crates/ui-egui/src/app.rs`
+- `crates/ui-egui/src/app/commands.rs`
 - `crates/ui-egui/src/app/files.rs`
 - `crates/ui-egui/src/app/links.rs`
 - `crates/ui-egui/src/canvas.rs`
+- `crates/ui-egui/src/canvas/area.rs`
 - `crates/ui-egui/src/canvas/bars.rs`
+- `crates/ui-egui/src/canvas/find.rs`
+- `crates/ui-egui/src/canvas/organize.rs`
 - `crates/ui-egui/src/chrome.rs`
 - `crates/ui-egui/src/commands.rs`
 - `crates/ui-egui/src/dialogs.rs`
 - `crates/ui-egui/src/dialogs/credits.rs`
+- `crates/ui-egui/src/dialogs/palette.rs`
 - `crates/ui-egui/src/dialogs/preferences.rs`
+- `crates/ui-egui/src/dialogs/prompts.rs`
+- `crates/ui-egui/src/dialogs/protect.rs`
+- `crates/ui-egui/src/dialogs/standards_ui.rs`
 - `crates/ui-egui/src/editing.rs`
 - `crates/ui-egui/src/editing/save.rs`
 - `crates/ui-egui/src/embedded.rs`
 - `crates/ui-egui/src/home.rs`
+- `crates/ui-egui/src/home/folders_ui.rs`
 - `crates/ui-egui/src/host_state.rs`
+- `crates/ui-egui/src/hotbar.rs`
+- `crates/ui-egui/src/image_engine.rs`
 - `crates/ui-egui/src/lib.rs`
 - `crates/ui-egui/src/menus.rs`
+- `crates/ui-egui/src/panels/all_tools_ui.rs`
+- `crates/ui-egui/src/panels/comments_panel.rs`
+- `crates/ui-egui/src/panels/edit.rs`
+- `crates/ui-egui/src/panels/format_text_ui.rs`
+- `crates/ui-egui/src/panels/organize_panel.rs`
+- `crates/ui-egui/src/panels/right.rs`
+- `crates/ui-egui/src/panels/search_ui.rs`
+- `crates/ui-egui/src/panels/tools.rs`
+- `crates/ui-egui/src/platform/motion/tests.rs`
 - `crates/ui-egui/src/platform/updates.rs`
+- `crates/ui-egui/src/platform/window_controls.rs`
 - `crates/ui-egui/src/theme.rs`
+- `crates/ui-egui/src/tools/bulk_fields.rs`
+- `crates/ui-egui/src/tools/calc_order_ui.rs`
+- `crates/ui-egui/src/tools/camera_ui.rs`
+- `crates/ui-egui/src/tools/comments/menu.rs`
 - `crates/ui-egui/src/tools/content_ui.rs`
+- `crates/ui-egui/src/tools/field_table_ui.rs`
+- `crates/ui-egui/src/tools/fill_sign.rs`
 - `crates/ui-egui/src/tools/fill_sign/scan.rs`
+- `crates/ui-egui/src/tools/forms_ui.rs`
+- `crates/ui-egui/src/tools/link_ui.rs`
+- `crates/ui-egui/src/tools/measure_ui.rs`
+- `crates/ui-egui/src/tools/prepare/properties.rs`
+- `crates/ui-egui/src/tools/prepare/tabs.rs`
+- `crates/ui-egui/src/tools/redact_ui.rs`
 - `crates/ui-egui/src/tools/sign_ui/dialog.rs`
+- `crates/ui-egui/src/tools/stamps_ui.rs`
+- `crates/ui-egui/src/tools/tags_ui.rs`
 - `crates/ui-egui/src/widgets.rs`
+- `crates/ui-egui/src/widgets/icons.rs`
+- `crates/ui-egui/src/workflows/a11y_ui.rs`
+- `crates/ui-egui/src/workflows/combine_grid.rs`
+- `crates/ui-egui/src/workflows/combine_grid/card.rs`
+- `crates/ui-egui/src/workflows/combine_ui/table.rs`
+- `crates/ui-egui/src/workflows/combine_ui/view.rs`
+- `crates/ui-egui/src/workflows/js_ui.rs`
 - `crates/ui-egui/src/workflows/ocr_ui.rs`
+- `crates/ui-egui/src/workflows/print_ui/body.rs`
 - `crates/ui-egui/src/workflows/web_print.rs`
+- `embedded-test/artifact-search-lite.json`
 - `embedded-test/artifact-search.json`
 - `embedded-test/blank.pdf`
 - `embedded-test/browser-results.json`
 - `embedded-test/index.html`
+- `embedded-test/loud-theme.json`
 - `embedded-test/sample.pdf`
 - `embedded-test/size-web-lite.json`
 - `embedded-test/size-web.json`

@@ -1,4 +1,6 @@
 use super::{Align, CloseRequest, Layout, PdfCraftApp, Tokens, theme, widgets};
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// The buttons of the "Save changes?" prompt, in the order they sit on screen, left to right.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -100,7 +102,7 @@ pub(super) fn save_prompt(app: &mut PdfCraftApp, ctx: &egui::Context) {
                 .wrap(),
             );
             if shown != name {
-                title.on_hover_text(&name);
+                title.host_hover_text(&name);
             }
         });
         ui.add_space(6.0);
@@ -171,13 +173,20 @@ pub(super) fn link_prompt(app: &mut PdfCraftApp, ctx: &egui::Context) {
             ui.label(egui::RichText::new(&host.ascii).font(theme::semibold(14.0)));
             if host.mixed_scripts {
                 let warning = tl!("This web address mixes letters from different alphabets, a common way to imitate another site's name.");
-                ui.add(egui::Label::new(egui::RichText::new(warning).color(egui::Color32::from_rgb(0xD1, 0x3B, 0x3B))).wrap());
+                ui.add(
+                    egui::Label::new(egui::RichText::new(warning).color(crate::theme::surface(
+                        ui.ctx(),
+                        "danger",
+                        egui::Color32::from_rgb(0xD1, 0x3B, 0x3B),
+                    )))
+                    .wrap(),
+                );
             } else if host.international {
                 let note = tl!("This web address uses letters from another alphabet, which can look like familiar ones.");
                 ui.add(egui::Label::new(egui::RichText::new(note).color(t.text)).wrap());
             }
         }
-        egui::ScrollArea::vertical().max_height(120.0).show(ui, |ui| {
+        egui::ScrollArea::vertical().max_height(120.0).host_show(ui, |ui| {
             ui.add(egui::Label::new(egui::RichText::new(&pending.url).monospace().small()).wrap().selectable(true));
         });
         ui.add_space(8.0);
@@ -257,7 +266,7 @@ pub(super) fn remote_link_prompt(app: &mut PdfCraftApp, ctx: &egui::Context) {
         ui.label(egui::RichText::new(tl!("Open this local PDF?")).font(theme::semibold(16.0)));
         ui.add_space(6.0);
         ui.label(tl!("This document is trying to open a local file:"));
-        egui::ScrollArea::vertical().max_height(160.0).show(ui, |ui| {
+        egui::ScrollArea::vertical().max_height(160.0).host_show(ui, |ui| {
             // A local path is file/path chrome: left to right, so its final component stays last.
             let mut job = egui::text::LayoutJob::simple(
                 pending.path.to_string_lossy().into_owned(),
@@ -330,7 +339,7 @@ fn password_modal(
         if let Some(e) = error {
             ui.add_space(4.0);
             // Known error text is translated; anything else passes through.
-            ui.label(egui::RichText::new(tl!(e)).color(egui::Color32::from_rgb(0xD1, 0x3B, 0x3B)));
+            ui.label(egui::RichText::new(tl!(e)).color(crate::theme::surface(ui.ctx(), "danger", egui::Color32::from_rgb(0xD1, 0x3B, 0x3B))));
         }
         ui.add_space(12.0);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {

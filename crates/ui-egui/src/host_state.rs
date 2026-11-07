@@ -132,9 +132,14 @@ pub fn notice(ctx: &Context) {
     let message = shared.lock().unwrap_or_else(|e| e.into_inner()).error.clone();
     if let Some(message) = message {
         let mut open = true;
-        egui::Window::new(tl!("Not saved")).id(Id::unique("host-not-saved")).collapsible(false).open(&mut open).show(ctx, |ui| {
-            ui.label(message);
-        });
+        egui::Window::new(tl!("Not saved"))
+            .frame(crate::theme::dialog_frame(ctx))
+            .id(Id::unique("host-not-saved"))
+            .collapsible(false)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                ui.label(message);
+            });
         if !open {
             shared.lock().unwrap_or_else(|e| e.into_inner()).error = None;
         }

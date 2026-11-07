@@ -250,9 +250,13 @@ pub const COMMANDS: &[CommandSpec] = &[
         "panel-left",
     ),
     c("ui.dock.reset", "Reset side panels", VIEW, None, Nothing, "settings"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("view.theme", "Switch light / dark theme", None, None, Nothing, "moon"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("view.theme.system", "Use system setting", None, None, Nothing, "settings"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("view.theme.light", "Light gray", None, None, Nothing, "sun"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("view.theme.dark", "Dark gray", None, None, Nothing, "moon"),
     c("comment.list", "Comments panel", VIEW, None, Document, "message-square-text"),
     c("comment.note", "Add a sticky note", None, None, Annotate, "sticky-note"),

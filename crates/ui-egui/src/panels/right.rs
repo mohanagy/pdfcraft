@@ -3,6 +3,8 @@ use super::pages::{page_tools, pages, thumbnail_size};
 use super::{
     Align, Align2, Color32, DocInfo, FieldKind, Layout, Nav, PdfCraftApp, Rect, RightPanel, Sense, Stroke, Tokens, human_size, icons, theme, vec2,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// Draw the selected right-hand panel and apply its navigation, layer, bookmark or edit actions.
 pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
@@ -180,7 +182,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     let enabled = !modal && view.panel_drag.is_none();
                     thumbnail_size(ui, &t, view, enabled);
                 }
-                egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| match panel {
+                egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| match panel {
                     RightPanel::Comments => {
                         if let Some(e) = crate::comments_panel::show(ui, &t, doc, view, prefs, comment_allowed, &mut nav) {
                             panel_edit = Some(e);
@@ -251,7 +253,7 @@ pub fn right_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                                 fg,
                                 (rect.width() - 40.0).max(0.0),
                             );
-                            if theme::hand(resp).on_hover_text(if l.visible { tl!("Hide layer") } else { tl!("Show layer") }).clicked() {
+                            if theme::hand(resp).host_hover_text(if l.visible { tl!("Hide layer") } else { tl!("Show layer") }).clicked() {
                                 toggle_layer = Some((li, !l.visible));
                             }
                         }
@@ -524,7 +526,13 @@ fn fields(ui: &mut egui::Ui, panel: FieldsPanel<'_>) -> Option<(String, usize)> 
                 let press = theme::Press::track(ui, &resp);
                 press.wash(ui, rect, 6, selected);
                 let body = rect.translate(press.offset());
-                icons::paint(ui, Rect::from_min_size(body.min + vec2(8.0, 7.0), vec2(16.0, 16.0)), icon, 15.0, Color32::from_rgb(0x8E, 0x4E, 0xE6));
+                icons::paint(
+                    ui,
+                    Rect::from_min_size(body.min + vec2(8.0, 7.0), vec2(16.0, 16.0)),
+                    icon,
+                    15.0,
+                    crate::theme::surface(ui.ctx(), "icon", Color32::from_rgb(0x8E, 0x4E, 0xE6)),
+                );
                 let value =
                     f.value.as_ref().map(|v| if v.chars().count() > 18 { format!("{}…", v.chars().take(17).collect::<String>()) } else { v.clone() });
                 let value_font = theme::regular(11.5);
@@ -550,7 +558,7 @@ fn fields(ui: &mut egui::Ui, panel: FieldsPanel<'_>) -> Option<(String, usize)> 
                         bpress.wash(ui, r, 4, false);
                         icons::paint(ui, r.shrink(3.0).translate(bpress.offset()), icon, 15.0, t.icon);
                     }
-                    if theme::hand(b).on_hover_text(tip).clicked() {
+                    if theme::hand(b).host_hover_text(tip).clicked() {
                         *edit = Some(pdfcraft_engine::Edit::MoveInTabOrder { name: f.name.clone(), earlier });
                     }
                 }
@@ -570,7 +578,7 @@ fn fields(ui: &mut egui::Ui, panel: FieldsPanel<'_>) -> Option<(String, usize)> 
             }
             let resp = theme::hand(resp);
             // Only a row in view can be hovered: its tip isn't built for the others.
-            let resp = if visible { resp.on_hover_text(field_tip(f)) } else { resp };
+            let resp = if visible { resp.host_hover_text(field_tip(f)) } else { resp };
             if resp.clicked()
                 && let (Some(p), Some(r)) = (f.page, f.rect)
             {

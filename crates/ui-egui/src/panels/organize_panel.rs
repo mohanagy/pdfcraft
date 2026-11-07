@@ -8,12 +8,26 @@
 //! The page actions queue on the view (`pending_edit`, `pending_action`) exactly as the grid's
 //! toolbar did, so they run, refuse and undo the same way.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
 use pdfcraft_engine::Edit;
 
 use crate::canvas::ViewAction;
 use crate::theme::{self, Tokens};
 use crate::{LeftPanel, PdfCraftApp, icons, widgets};
+
+type SecondaryTool = (&'static str, &'static str, Availability, Option<&'static str>);
+const SECONDARY_TOOLS: &[SecondaryTool] = &[
+    ("square-dashed-mouse-pointer", "Set page boxes", Availability::Ready, Some("page.boxes")),
+    ("crop", "Crop pages", Availability::Ready, Some("page.crop")),
+    ("presentation", "Page transitions", Availability::Later, Some("page.transitions")),
+    ("file-text", "Page templates", Availability::Later, None),
+    ("printer", "Print pages", Availability::Ready, Some("print.dialog")),
+];
+fn embedded_entry_ready(availability: Availability) -> bool {
+    availability == Availability::Ready
+}
 
 /// Whether the left panel is Organize pages: the tool is chosen, or the active view shows the grid.
 pub(crate) fn showing(app: &PdfCraftApp) -> bool {
@@ -57,7 +71,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
         let title = tl!("Organize pages");
         let title_width = (ui.available_width() - 26.0 - ui.spacing().item_spacing.x).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(title).font(theme::semibold(15.5)).color(t.text)).truncate())
-            .on_hover_text(title);
+            .host_hover_text(title);
         if icons::button(ui, "x", 26.0, false, tl!("Close panel")).clicked() {
             close = true;
         }
@@ -66,7 +80,7 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     ui.separator();
     ui.add_space(6.0);
 
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| {
         ui.add_space(2.0);
         widgets::section_title(ui, tl!("Pages selected"));
         let current = view.current;
@@ -142,13 +156,10 @@ pub(crate) fn panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
             act = Some(Act::Command("edit.bates"));
         }
         divider(ui, t);
-        for (icon, label, availability, command) in [
-            ("square-dashed-mouse-pointer", "Set page boxes", Availability::Ready, Some("page.boxes")),
-            ("crop", "Crop pages", Availability::Ready, Some("page.crop")),
-            ("presentation", "Page transitions", Availability::Later, Some("page.transitions")),
-            ("file-text", "Page templates", Availability::Later, None),
-            ("printer", "Print pages", Availability::Ready, Some("print.dialog")),
-        ] {
+        for &(icon, label, availability, command) in SECONDARY_TOOLS {
+            if theme::HOST_EMBEDDED && !embedded_entry_ready(availability) {
+                continue;
+            }
             if row(ui, t, icon, tl!(label), availability, false).clicked()
                 && let Some(command) = command
             {
@@ -241,7 +252,7 @@ fn row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability: Ava
     }
     match availability {
         Availability::Ready => theme::hand(resp),
-        Availability::Later => resp.on_hover_text(tl!("Planned")),
+        Availability::Later => resp.host_hover_text(tl!("Planned")),
     }
 }
 
@@ -250,4 +261,17 @@ fn divider(ui: &mut egui::Ui, t: &Tokens) {
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 1.0), Sense::hover());
     ui.painter().rect_filled(r, CornerRadius::ZERO, t.divider);
     ui.add_space(6.0);
+}
+
+#[cfg(test)]
+mod embedded_secondary_tests {
+    use super::*;
+    #[test]
+    fn no_non_ready_secondary_tool_is_exposed() {
+        for &(_, label, status, command) in SECONDARY_TOOLS.iter().filter(|(_, _, status, _)| embedded_entry_ready(*status)) {
+            assert!(status == Availability::Ready, "{label}");
+            assert!(command.is_some_and(pdfcraft_engine::catalog::embedded_command_ready), "{label}");
+        }
+        assert!(!embedded_entry_ready(Availability::Later));
+    }
 }

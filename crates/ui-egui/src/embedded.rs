@@ -54,6 +54,8 @@ fn canonical(key: &str) -> String {
 }
 fn valid_token(key: &str, value: &Value) -> bool {
     match key {
+        "dialog" | "popup" | "toast" | "tooltip" | "toolstrip" | "scrollbar" | "scrollbar_thumb" | "backstage_nav" | "backstage_content" | "menu"
+        | "on_accent" | "success" | "warning" | "danger" => color(value).is_some(),
         "titlebar" | "chrome" | "panel" | "pasteboard" | "card" | "border" | "divider" | "text" | "text_muted" | "text_faint" | "icon" | "hover"
         | "pressed" | "selected" | "accent" | "accent_text" | "accent_soft" | "field" | "badge_new" | "page_shadow" => color(value).is_some(),
         "radius" => value.as_u64().is_some_and(|n| n <= 32),
@@ -156,9 +158,15 @@ pub fn configure(ctx: &Context, input: &Value) -> Value {
     ctx.request_repaint();
     json!({"applied":applied,"ignored":ignored})
 }
-pub fn tokens(ctx: &Context, mut t: Tokens) -> Tokens {
-    if ACTIVE {
-        for (key, value) in current(ctx).theme {
+pub fn tokens(ctx: &Context, t: Tokens) -> Tokens {
+    if !ACTIVE {
+        return t;
+    }
+    configured_tokens(t, current(ctx))
+}
+fn configured_tokens(mut t: Tokens, config: Config) -> Tokens {
+    {
+        for (key, value) in config.theme.clone() {
             match key.as_str() {
                 "titlebar" => {
                     if let Some(c) = color(&value) {
@@ -269,14 +277,66 @@ pub fn tokens(ctx: &Context, mut t: Tokens) -> Tokens {
             }
         }
     }
+    {
+        t.dialog = t.card;
+        t.popup = t.card;
+        t.toast = t.card;
+        t.tooltip = t.card;
+        t.toolstrip = t.chrome;
+        t.scrollbar = t.panel;
+        t.scrollbar_thumb = t.hover;
+        t.backstage_nav = t.chrome;
+        t.backstage_content = t.panel;
+        t.menu = t.card;
+        t.on_accent = t.text;
+        t.success = t.accent;
+        t.warning = t.accent;
+        t.danger = t.accent;
+        for (key, value) in config.theme.clone() {
+            if let Some(c) = color(&value) {
+                match key.as_str() {
+                    "dialog" => t.dialog = c,
+                    "popup" => t.popup = c,
+                    "toast" => t.toast = c,
+                    "tooltip" => t.tooltip = c,
+                    "toolstrip" => t.toolstrip = c,
+                    "scrollbar" => t.scrollbar = c,
+                    "scrollbar_thumb" => t.scrollbar_thumb = c,
+                    "backstage_nav" => t.backstage_nav = c,
+                    "backstage_content" => t.backstage_content = c,
+                    "menu" => t.menu = c,
+                    "on_accent" => t.on_accent = c,
+                    "success" => t.success = c,
+                    "warning" => t.warning = c,
+                    "danger" => t.danger = c,
+                    _ => {}
+                }
+            }
+        }
+    }
     t
 }
-const CHROME_KEYS: &[&str] = &["titlebar", "homeTab", "openTab", "modebar"];
+const CHROME_KEYS: &[&str] = &["fileNew", "fileClose", "titlebar", "homeTab", "openTab", "modebar"];
 pub fn apply(app: &mut crate::PdfCraftApp, ctx: &Context) {
     app.ctx = Some(ctx.clone());
     let brand = current(ctx).branding.unwrap_or_else(|| "Editor".into());
     BRAND.with(|n| *n.borrow_mut() = brand);
     process_actions(app, ctx);
+    if ACTIVE {
+        if let crate::QuickTool::Comment(tool) = app.quick_tool
+            && !pdfcraft_engine::catalog::embedded_command_ready(tool.command())
+        {
+            app.quick_tool = crate::QuickTool::Select;
+        }
+        for (index, tool) in app.comment_prefs.group_tool.iter_mut().enumerate() {
+            if !pdfcraft_engine::catalog::embedded_command_ready(tool.command())
+                && let Some(replacement) =
+                    crate::comments::GROUPS.get(index).and_then(|g| g.iter().find(|t| pdfcraft_engine::catalog::embedded_command_ready(t.command())))
+            {
+                *tool = *replacement;
+            }
+        }
+    }
     let c = current(ctx);
     if let Some(s) = c.color_scheme {
         app.theme_preference = match s.as_str() {
@@ -299,6 +359,19 @@ pub fn command_allowed(ctx: &Context, id: &str) -> bool {
     command_policy(ctx, id)
 }
 fn command_policy(ctx: &Context, id: &str) -> bool {
+    if id.starts_with("ai.") || id.starts_with("view.theme") || matches!(id, "ui.theme" | "ui.darkMode" | "references.researcher") {
+        return false;
+    }
+    if (id.starts_with("file.new") || id == "create.blank") && !configured_visible(ctx, "fileNew") {
+        return false;
+    }
+    if id.starts_with("file.close") && !configured_visible(ctx, "fileClose") {
+        return false;
+    }
+    if !pdfcraft_engine::catalog::embedded_command_ready(id) {
+        return false;
+    }
+
     if matches!(id, "help.discord" | "help.github" | "help.website" | "help.app_page" | "help.check_updates") {
         return false;
     }
@@ -525,5 +598,56 @@ mod host_ack_revision_tests {
         shared.lock().unwrap().actions.push_back(Action::Saved { ok: true, error: None });
         process_actions(&mut app, &ctx);
         assert!(app.session.get(id).unwrap().dirty, "an older stored snapshot cannot clear a newer edit");
+    }
+}
+
+#[cfg(test)]
+mod round3_tests {
+    use super::*;
+    #[test]
+    fn validates_every_surface_slot() {
+        let ctx = Context::default();
+        for key in ["dialog", "popup", "toast", "tooltip", "toolstrip", "scrollbar", "scrollbarThumb", "backstageNav", "backstageContent"] {
+            let result = configure(&ctx, &json!({"theme":{key:"#fd12ab"}}));
+            assert_eq!(result["applied"], json!([format!("theme.{key}")]));
+            let result = configure(&ctx, &json!({"theme":{key:"invalid"}}));
+            assert_eq!(result["ignored"], json!([format!("theme.{key}")]));
+        }
+    }
+    #[test]
+    fn new_close_and_removed_preferences_are_not_dispatchable() {
+        let ctx = Context::default();
+        configure(&ctx, &json!({"chrome":{"fileNew":false,"fileClose":false}}));
+        for id in ["create.blank", "file.close", "file.close_all", "view.theme", "ai.summary", "export.xlsx", "js.console"] {
+            assert!(!command_policy(&ctx, id), "{id}");
+        }
+        assert!(command_policy(&ctx, "file.save"));
+    }
+}
+
+#[cfg(test)]
+mod host_palette_tests {
+    use super::*;
+    #[test]
+    fn each_new_region_uses_its_own_validated_host_color() {
+        let ctx = Context::default();
+        configure(
+            &ctx,
+            &json!({"theme":{"dialog":"#ffb2ed","popup":"#b7ffce","toast":"#ffcc85","tooltip":"#e7c7ff","toolstrip":"#95f4f0","scrollbar":"#ffbc7d","scrollbarThumb":"#6c138c","backstageNav":"#79edaa","backstageContent":"#fcdf95"}}),
+        );
+        let t = configured_tokens(Tokens::for_kind(crate::theme::ThemeKind::Light), current(&ctx));
+        for (actual, expected) in [
+            (t.dialog, "#ffb2ed"),
+            (t.popup, "#b7ffce"),
+            (t.toast, "#ffcc85"),
+            (t.tooltip, "#e7c7ff"),
+            (t.toolstrip, "#95f4f0"),
+            (t.scrollbar, "#ffbc7d"),
+            (t.scrollbar_thumb, "#6c138c"),
+            (t.backstage_nav, "#79edaa"),
+            (t.backstage_content, "#fcdf95"),
+        ] {
+            assert_eq!(Some(actual), color(&json!(expected)), "{expected}");
+        }
     }
 }

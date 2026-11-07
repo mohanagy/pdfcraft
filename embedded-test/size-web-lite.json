@@ -1,15 +1,15 @@
 {
   "app": "pdfcraft",
   "variant": "web-lite",
-  "file": "pdfcraft-web-4b6f971e0ba528ad_bg.wasm",
-  "bytes": 51895736,
-  "sha256": "9787502247cbb22b7d53e3d4e107956d80d0165e026225fcb05914176da5ff1f",
+  "file": "pdfcraft-web-2ab40e8de4b91261_bg.wasm",
+  "bytes": 51868243,
+  "sha256": "a49198e9a30c86de70e406d0b6509656aef6896ecf85d8af74596c4855fa30a5",
   "categories": {
-    "code": 34426199,
+    "code": 34430440,
     "fonts": 4228160,
     "dictionaries": 0,
-    "locales": 9378312,
-    "other": 3863065
+    "locales": 9349993,
+    "other": 3859650
   },
   "matches": [
     {
@@ -99,16 +99,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-vi-pdfcraft.tsv",
-      "sourceBytes": 307652,
-      "storedBytes": 307652,
-      "sha256": "9e71530412dfee6e2d24d356cb3a861e82a2268a0b8ceddf122f8ab9994b5161"
+      "sourceBytes": 306836,
+      "storedBytes": 306836,
+      "sha256": "1b409f65c455727f985f76a37f884e055b56f78babbfd79d23f4a31d6b684b25"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-sl-pdfcraft.tsv",
-      "sourceBytes": 250505,
-      "storedBytes": 250505,
-      "sha256": "e1dcb17cf0492b45aad63c9cd5654f7e27b9e0d18f4aa03457a75c8db428c676"
+      "sourceBytes": 249760,
+      "storedBytes": 249760,
+      "sha256": "7b48b64265fded5387934ee4c6d6b8effd7093584ebc8dc4f3f57bc01af42311"
     },
     {
       "category": "locales",
@@ -120,23 +120,23 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-bs-pdfcraft.tsv",
-      "sourceBytes": 161562,
-      "storedBytes": 161562,
-      "sha256": "c11f81a9d10895a24141dfc880463b13ad130a4295cbe4459735002b3de517fe"
+      "sourceBytes": 160888,
+      "storedBytes": 160888,
+      "sha256": "9886237ad7e95ba09c63830b9e6fff9e347828f2486a52cabbc8f51afdda4707"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-tr-pdfcraft.tsv",
-      "sourceBytes": 278103,
-      "storedBytes": 278103,
-      "sha256": "06cf6db75364513e6566ef015d25c45ea6137f50a1b715ea21edbc9f8b857cc1"
+      "sourceBytes": 277239,
+      "storedBytes": 277239,
+      "sha256": "d96658f75d9275204238521d0f0e03b1c2aa7139f4fd0bef4d57ac630b2b6716"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-nb-pdfcraft.tsv",
-      "sourceBytes": 196928,
-      "storedBytes": 196928,
-      "sha256": "d5f40bbf86f9581807cd15110e3aba65c33d1407bc368b6021e34d3f60ca31f2"
+      "sourceBytes": 196237,
+      "storedBytes": 196237,
+      "sha256": "2c82d07d645d3ac7d91e4458e6a889744e7d766b1ad1ed1f4bfb1862f4dc7c8f"
     },
     {
       "category": "locales",
@@ -183,16 +183,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-id-pdfcraft.tsv",
-      "sourceBytes": 226908,
-      "storedBytes": 226908,
-      "sha256": "3e6a8a183b14a23ff6fc1ae82e7ce9d1c1d300cb956351921a4a91081b270c00"
+      "sourceBytes": 226165,
+      "storedBytes": 226165,
+      "sha256": "405e80d2e1c01f42908a1472fe91be8f072275c79fe1759c3ca5f3f39966cecb"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-ar-pdfcraft.tsv",
-      "sourceBytes": 332317,
-      "storedBytes": 332317,
-      "sha256": "bf823b8007c319cfe8eb7374fd50ff5d3738a286dd8ad7836ff0caa6b23efc7d"
+      "sourceBytes": 331383,
+      "storedBytes": 331383,
+      "sha256": "5b2a6a67a6af95efc8f7feec648bb50316b3fb8a8a68f5040253edef3abed49e"
     },
     {
       "category": "locales",
@@ -204,23 +204,23 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-ro-pdfcraft.tsv",
-      "sourceBytes": 280690,
-      "storedBytes": 280690,
-      "sha256": "87659d9b0b758dbd152910e12f48e5ac9772fac6499071e16459d5fe687cc475"
+      "sourceBytes": 279975,
+      "storedBytes": 279975,
+      "sha256": "f645a30d840c06063b3b33cb6064a8a6d365ff8a28811376e3b6ce5490cd89f9"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-fr-pdfcraft.tsv",
-      "sourceBytes": 301173,
-      "storedBytes": 301173,
-      "sha256": "99df9ff960ccd5160775eb6bf4634115dcf05bd9e84814c369ceb42846435b8b"
+      "sourceBytes": 300413,
+      "storedBytes": 300413,
+      "sha256": "445718c288db2a2e3bb4af5e0b4e8b6f6a8a8d3391fc9c0aefa5ac0c886849fe"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-el-pdfcraft.tsv",
-      "sourceBytes": 360911,
-      "storedBytes": 360911,
-      "sha256": "3aaa2fd35ad29e7b7ab94d5fbda502b607c43af099d095857906b089927a3ee4"
+      "sourceBytes": 359751,
+      "storedBytes": 359751,
+      "sha256": "cb607aba43b39a01ea835af6014b0b3ee25c774d1afd0cf2c9506cae518f26fa"
     },
     {
       "category": "locales",
@@ -232,16 +232,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-pl-pdfcraft.tsv",
-      "sourceBytes": 275095,
-      "storedBytes": 275095,
-      "sha256": "f53c71d4a7e0dc8d0caaaaf0b1ddb9df2d5872477b82070ed912780ba8868c5e"
+      "sourceBytes": 274376,
+      "storedBytes": 274376,
+      "sha256": "9f9378a3fa5ffb704d00cca7ccd4a143624c06deb61068e403b00766a0a25506"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-dv-pdfcraft.tsv",
-      "sourceBytes": 231790,
-      "storedBytes": 231790,
-      "sha256": "798b4c65d31916ed4e0e032f160b8601126f31ebcc492906463eaf23808a9b9e"
+      "sourceBytes": 230696,
+      "storedBytes": 230696,
+      "sha256": "090b4a611a15a7836bbddfe461ecdef8acd1fa8f3656d776576c7228f7a050d9"
     },
     {
       "category": "locales",
@@ -253,16 +253,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-es-pdfcraft.tsv",
-      "sourceBytes": 313461,
-      "storedBytes": 313461,
-      "sha256": "137019fc96e292ee63fe907739e3811958bef180fd54130b0081a1e412e42617"
+      "sourceBytes": 312739,
+      "storedBytes": 312739,
+      "sha256": "61e9abaae8fcfda8f359358a705dbd3cae213ca4032c90a0374ae0673ad14d47"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-ta-pdfcraft.tsv",
-      "sourceBytes": 328501,
-      "storedBytes": 328501,
-      "sha256": "a0e4aeaefd665ee088ece648fc129dfd1216e1bf956590ba3c89e760879324cf"
+      "sourceBytes": 327067,
+      "storedBytes": 327067,
+      "sha256": "7078e27ac3adf747340540b1b22cfbad489c4e55a6c59fa9a9a573af9bc07905"
     },
     {
       "category": "locales",
@@ -281,9 +281,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-pt-br-pdfcraft.tsv",
-      "sourceBytes": 315902,
-      "storedBytes": 315902,
-      "sha256": "9d193f1f2c05396a9e15111bab928ab634945430aceb512ff0b54e9f2273fcd8"
+      "sourceBytes": 315155,
+      "storedBytes": 315155,
+      "sha256": "b51685c8322f89b5981e2b3a911a78b3daa562bda51d8e58d810eac9cd247062"
     },
     {
       "category": "locales",
@@ -295,23 +295,23 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-hu-pdfcraft.tsv",
-      "sourceBytes": 270640,
-      "storedBytes": 270640,
-      "sha256": "c341ea45f0c522caecd845a059d7d1ab712b055c339813fdfbb97f186808cd84"
+      "sourceBytes": 269848,
+      "storedBytes": 269848,
+      "sha256": "3f187e258647e64cc9254ad8968948a2a9bc1bf97f333e5514afc606c895c92a"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-kk-pdfcraft.tsv",
-      "sourceBytes": 349692,
-      "storedBytes": 349692,
-      "sha256": "a17c7dadafc56f0be472c44fdf02738ff28e6f588ccd9f1a563f2df3da08a48f"
+      "sourceBytes": 348679,
+      "storedBytes": 348679,
+      "sha256": "22474c63e93850ee05a0773ab4e0e62e3f2c262805a50ea9232ea05fa8da1d1b"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-fa-pdfcraft.tsv",
-      "sourceBytes": 225961,
-      "storedBytes": 225961,
-      "sha256": "03a06cb22aae2618f6cc1d86e36010a34690dfe743855a587042c5bbd3ccf7f1"
+      "sourceBytes": 224845,
+      "storedBytes": 224845,
+      "sha256": "be0985574be08f530ac035988771aa20b46e7cb7d5d0e79e9286f66f542ab04a"
     },
     {
       "category": "locales",
@@ -330,9 +330,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-de-pdfcraft.tsv",
-      "sourceBytes": 299723,
-      "storedBytes": 299723,
-      "sha256": "c7ce047c40f2bc3eafdaaa8dce79702c38f5472307fb9776b78255e20ba4a706"
+      "sourceBytes": 298954,
+      "storedBytes": 298954,
+      "sha256": "0a849f20761cc524b5d5a7a52266374871cbe8c2bd95251d8aa21f6b2e51b396"
     },
     {
       "category": "locales",
@@ -344,23 +344,23 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-lt-pdfcraft.tsv",
-      "sourceBytes": 316554,
-      "storedBytes": 316554,
-      "sha256": "af6c31f54f596880bd7d4b90ecffbd8773e883cc9cbf0a0fa8455aa8b0e205cd"
+      "sourceBytes": 315806,
+      "storedBytes": 315806,
+      "sha256": "da71d884246dc8caaf5babf968d714766e0d6c90b62bdd5753524832b52a0829"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-ca-pdfcraft.tsv",
-      "sourceBytes": 279834,
-      "storedBytes": 279834,
-      "sha256": "cb90fbc58020102e1e7213196d6398ba5edba7258263a0279f5e2ad7cde1f146"
+      "sourceBytes": 279103,
+      "storedBytes": 279103,
+      "sha256": "0859f780d0a970650e425c22afb03cad7765fc51b4d122e120199bab24128965"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-ckb-pdfcraft.tsv",
-      "sourceBytes": 273644,
-      "storedBytes": 273644,
-      "sha256": "e80d6b69ed0e7ff0ae6aead8a2fca4ce01db1e13b46600ea229216cf522ce1b2"
+      "sourceBytes": 272583,
+      "storedBytes": 272583,
+      "sha256": "2bee49dbbea7b55f787b915cc6badd2de5027c0653cf06ff2ad3ed6aae068efa"
     },
     {
       "category": "locales",
@@ -379,9 +379,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-it-pdfcraft.tsv",
-      "sourceBytes": 276814,
-      "storedBytes": 276814,
-      "sha256": "ccaabf0db6b47893075b36c9444f41339a972d705f8c5398e56431b9b25de034"
+      "sourceBytes": 276029,
+      "storedBytes": 276029,
+      "sha256": "f1b3386e3c21cca8d84b8393aa94f0103ff830130694dea8e4b2026038636127"
     },
     {
       "category": "locales",
@@ -407,9 +407,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-lo-pdfcraft.tsv",
-      "sourceBytes": 286110,
-      "storedBytes": 286110,
-      "sha256": "e1f4afa4b4fcc76752b228479d6580ce524db620daebf0a7e5137167a4945b93"
+      "sourceBytes": 284777,
+      "storedBytes": 284777,
+      "sha256": "1ffa10f14761df67474dd8d9b689f5af57bab940a0c7aea36d54f0a1f33b51a8"
     },
     {
       "category": "locales",
@@ -435,16 +435,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-da-pdfcraft.tsv",
-      "sourceBytes": 146448,
-      "storedBytes": 146448,
-      "sha256": "45cbc26286e0116315eb4cefc14c72ac39c7f36a742c17d6aae39ae120e77f9c"
+      "sourceBytes": 145758,
+      "storedBytes": 145758,
+      "sha256": "b51f3088902b70f1819093013e1730cdc08e3ef88d90c03d23fa24b6a524707d"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-nl-pdfcraft.tsv",
-      "sourceBytes": 168043,
-      "storedBytes": 168043,
-      "sha256": "d8e75a93553487c419906ad47ad5cfaf7356b1f3b51a725c389767e00e46dd8b"
+      "sourceBytes": 167365,
+      "storedBytes": 167365,
+      "sha256": "2497f91fa45492fd155a6ffb9c93f6d097349cbf0125557ca322a80812847f2e"
     },
     {
       "category": "locales",
@@ -477,16 +477,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-he-pdfcraft.tsv",
-      "sourceBytes": 197684,
-      "storedBytes": 197684,
-      "sha256": "e75410bd7080795ffa54c97e8db352701ebf01368470d99c3b9834b01ecb4cdb"
+      "sourceBytes": 196833,
+      "storedBytes": 196833,
+      "sha256": "177e50f09c8771808bc61661bc4a1d21ad1ba477df4e4ac17dca5365e5b8c3f1"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-cs-pdfcraft.tsv",
-      "sourceBytes": 307940,
-      "storedBytes": 307940,
-      "sha256": "3bde80a9a239fc515f795f4d563c4ce131fc8d5456b3139a303a63d4df1960ef"
+      "sourceBytes": 307200,
+      "storedBytes": 307200,
+      "sha256": "26a23f55ddd12ef6591085a3d28e2276cf194237d6665de96dd7179ab9a20c19"
     },
     {
       "category": "locales",
@@ -498,9 +498,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-ur-pdfcraft.tsv",
-      "sourceBytes": 221446,
-      "storedBytes": 221446,
-      "sha256": "df1d8f991e35639c559d314df67e75c51426d803b9442a0d34a0862a1830ac29"
+      "sourceBytes": 220556,
+      "storedBytes": 220556,
+      "sha256": "2fce435fc8138e8656bf1b1c5fc6460e989c688e3e728a985b3ebff000f93f1f"
     },
     {
       "category": "locales",
@@ -512,16 +512,16 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-sq-pdfcraft.tsv",
-      "sourceBytes": 220746,
-      "storedBytes": 220746,
-      "sha256": "a15c2eef92eba588e6c22f788c1fbeffd647abffc145831547cbfb7862b655e2"
+      "sourceBytes": 220017,
+      "storedBytes": 220017,
+      "sha256": "08ac894ace0dfe215e1409164dd8afd50370648155475d4a4e7d19c7726e96b9"
     },
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-sv-pdfcraft.tsv",
-      "sourceBytes": 146347,
-      "storedBytes": 146347,
-      "sha256": "37665b528399dc8e1ad0f321c941ee07684f7ab857674ab15c5481b759ba82c3"
+      "sourceBytes": 145643,
+      "storedBytes": 145643,
+      "sha256": "55dc3239649390bb02e52fbe98e6e80ed206da55f0e3e22850122a96bfdd25bd"
     },
     {
       "category": "locales",
@@ -540,9 +540,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-bn-pdfcraft.tsv",
-      "sourceBytes": 274710,
-      "storedBytes": 274710,
-      "sha256": "c524845cb9674894154d1a8cc1c5fd5a485a25d934307a1b9df577026daaa9a6"
+      "sourceBytes": 273586,
+      "storedBytes": 273586,
+      "sha256": "8084ac9c568fb704acc5d6bf9acf7fe7004e6d6e641ece0c46860e064c2aa9af"
     },
     {
       "category": "locales",
@@ -554,9 +554,9 @@
     {
       "category": "locales",
       "source": "/Users/mohammednaji/Desktop/projects/pdfcraft/target/wasm32-unknown-unknown/release/build/pdfcraft-ui-egui-9d01eae71a52f784/out/embedded-fi-pdfcraft.tsv",
-      "sourceBytes": 271186,
-      "storedBytes": 271186,
-      "sha256": "e82049592174bca6bc24ad9112828cf8196521ebdee0395ea392d20403f42970"
+      "sourceBytes": 270439,
+      "storedBytes": 270439,
+      "sha256": "9e42523f8d94217ba7bc1da8cf34ffd84a1d5de71199e5cfa2a0b6516a3e6b5c"
     }
   ],
   "method": "Code is the complete WASM code section. Resources are exact source-byte matches against reconstructed active linear-memory data, counted only where bytes are stored in the WASM (wasm-opt omits zero runs). Identical resources are deduplicated. Other is all remaining bytes, including section framing, runtime/static tables, compressed or transformed resources and any unmatched data. Categories are byte accounting, not independent removable or compressed download sizes.",

@@ -4,6 +4,7 @@ use super::{
     Annotation, Color32, CommentPrefs, CommentTool, DocInfo, DocView, Edit, Rect, ReviewState, Rgb, SELECT_BLUE, SWATCHES, Sense, Stroke, color32,
     icons, theme, tool_for, vec2,
 };
+use crate::theme::HostHoverExt as _;
 
 /// Save attachment… and, for a PDF, Open in a new tab, first in a file attachment comment's
 /// menus as in the Attachments panel: the comment is where the reader finds its file. Reading
@@ -191,7 +192,7 @@ fn swatch(ui: &mut egui::Ui, c: Rgb, on: bool, tooltip: &str) -> egui::Response 
     if on || resp.hovered() {
         ui.painter().circle_stroke(r.center(), 11.0, Stroke::new(1.5, SELECT_BLUE));
     }
-    resp.on_hover_text(tooltip)
+    resp.host_hover_text(tooltip)
 }
 
 /// The "+" swatch that opens "Other colour…": a ring with a plus, the size of a swatch.
@@ -208,7 +209,7 @@ fn other_colour_swatch(ui: &mut egui::Ui, open: bool) -> egui::Response {
     }
     let label = tl!("Other colour…");
     resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, open, label));
-    resp.on_hover_text(label)
+    resp.host_hover_text(label)
 }
 
 /// A grid of colour swatches with a "+" swatch for "Other colour…" (a full picker, as Acrobat's
@@ -297,7 +298,7 @@ pub(crate) fn quick_bar_controls(ui: &mut egui::Ui, tool: CommentTool, prefs: &m
     ui.painter().circle_filled(r.center(), 9.0, color32(style.color));
     ui.painter().circle_stroke(r.center(), 9.0, Stroke::new(1.0, Color32::from_black_alpha(50)));
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!("Colour")));
-    let resp = resp.on_hover_text(tl!("Colour"));
+    let resp = resp.host_hover_text(tl!("Colour"));
     egui::Popup::menu(&resp).align(egui::RectAlign::RIGHT_START).close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside).show(|ui| {
         if let Some(c) = swatch_grid(ui, Some(style.color)) {
             prefs.set_color(tool, c);
@@ -361,7 +362,7 @@ fn fill_button(ui: &mut egui::Ui, fill: Option<Rgb>) -> egui::Response {
         None => tl!("Fill colour: none"),
     };
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, label));
-    resp.on_hover_text(label)
+    resp.host_hover_text(label)
 }
 
 /// Status badge icon and label for a review state name.

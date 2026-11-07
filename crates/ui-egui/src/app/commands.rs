@@ -3,6 +3,9 @@ use super::*;
 impl PdfCraftApp {
     /// Run a catalogue command. Commands that aren't implemented yet say which milestone ships them.
     pub fn run_command(&mut self, command: &str) {
+        if crate::theme::HOST_EMBEDDED && !pdfcraft_engine::catalog::embedded_command_ready(command) {
+            return;
+        }
         if let Some(spec) = pdfcraft_engine::commands::command(command) {
             use pdfcraft_engine::commands::Needs;
             // A tool that needs a document, chosen with none open, asks for the file and then
@@ -19,18 +22,21 @@ impl PdfCraftApp {
             self.execute(command);
             return;
         }
-        // Not implemented yet: say which milestone ships it.
-        let when = pdfcraft_engine::catalog::TOOL_GROUPS
-            .iter()
-            .flat_map(|g| g.sections.iter().flat_map(|s| s.items.iter()))
-            .find(|i| i.command == command)
-            .map(|i| match i.availability {
-                pdfcraft_engine::catalog::Availability::Planned(m) => crate::i18n::fmt(tl!("ships in milestone {m}"), &[("m", m)]),
-                pdfcraft_engine::catalog::Availability::Provider => tl!("needs an AI provider (off by default)").to_string(),
-                pdfcraft_engine::catalog::Availability::Ready => tl!("is available").to_string(),
-            })
-            .unwrap_or_else(|| tl!("is not available yet").to_string());
-        self.notify_fmt("`{command}` {when}", &[("command", command), ("when", &when)]);
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+        {
+            // Not implemented yet: say which milestone ships it.
+            let when = pdfcraft_engine::catalog::TOOL_GROUPS
+                .iter()
+                .flat_map(|g| g.sections.iter().flat_map(|s| s.items.iter()))
+                .find(|i| i.command == command)
+                .map(|i| match i.availability {
+                    pdfcraft_engine::catalog::Availability::Planned(m) => crate::i18n::fmt(tl!("ships in milestone {m}"), &[("m", m)]),
+                    pdfcraft_engine::catalog::Availability::Provider => tl!("needs an AI provider (off by default)").to_string(),
+                    pdfcraft_engine::catalog::Availability::Ready => tl!("is available").to_string(),
+                })
+                .unwrap_or_else(|| tl!("is not available yet").to_string());
+            self.notify_fmt("`{command}` {when}", &[("command", command), ("when", &when)]);
+        }
     }
 
     /// Ask for a file to open, then run `spec` on it once it is open (or unlocked). Nothing runs
@@ -59,6 +65,11 @@ impl PdfCraftApp {
     /// Enter a tool from the catalogue, Home, palette or control channel. Organize is a
     /// workspace, so opening its panel also opens the page grid (without toggling it off).
     pub(crate) fn select_tool(&mut self, id: &'static str) {
+        if crate::theme::HOST_EMBEDDED
+            && !pdfcraft_engine::catalog::group(id).is_some_and(|g| g.availability == pdfcraft_engine::catalog::Availability::Ready)
+        {
+            return;
+        }
         // The tool's panel shows, not the expanded All tools view over it.
         self.all_tools_full = false;
         self.left = LeftPanel::Tool(id);

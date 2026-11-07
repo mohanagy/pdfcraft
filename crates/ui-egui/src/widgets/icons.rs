@@ -1,6 +1,7 @@
 //! Vector icons: embedded Lucide SVGs, recoloured to white, rasterized by egui_extras at the exact
 //! on-screen pixel size, and tinted per use (PhotoCraft lesson: never use Unicode glyphs as icons).
 
+use crate::theme::HostHoverExt as _;
 use std::sync::OnceLock;
 
 use craft_ui::buttons::{ButtonVisuals, IconButton, IconButtonStyle};
@@ -72,7 +73,7 @@ pub fn button(ui: &mut egui::Ui, name: &str, box_size: f32, selected: bool, tool
         paint(ui, rect.translate(press.offset()), name, size, tint);
     }
     let resp = theme::hand(resp);
-    if tooltip.is_empty() { resp } else { resp.on_hover_text(tooltip) }
+    if tooltip.is_empty() { resp } else { resp.host_hover_text(tooltip) }
 }
 
 #[cfg(test)]

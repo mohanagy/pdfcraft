@@ -84,6 +84,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Export to",
             items: &[
                 item("Microsoft Word (.docx)", "file-text", "export.docx", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Spreadsheet (.xlsx)", "grid-3x3", "export.xlsx", Planned("M10")),
                 item("Presentation (.pptx)", "presentation", "export.pptx", Ready),
                 item("Image (PNG)", "image", "export.image", Ready),
@@ -91,6 +92,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                 item("HTML web page", "file-symlink", "export.html", Ready),
                 item("Rich Text Format (.rtf)", "file-text", "export.rtf", Ready),
                 item("Text (plain)", "type", "export.text", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("PostScript / EPS", "file-down", "export.ps", Planned("M10")),
             ],
         }],
@@ -124,7 +126,10 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         icon: "file-pen-line",
         hue: PINK,
         badge: None,
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         availability: Planned("M7"),
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        availability: Ready,
         sections: &[
             ToolSection {
                 title: "Modify page",
@@ -208,6 +213,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                     item("Duplicate pages", "copy-plus", "page.duplicate", Ready),
                     item("Reverse pages", "arrow-up-down", "page.reverse", Ready),
                     item("Page labels", "tag", "page.number", Ready),
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                     item("Page transitions", "presentation", "page.transitions", Planned("M4")),
                 ],
             },
@@ -240,7 +246,9 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                     item("Oval", "circle", "comment.circle", Ready),
                     item("Line", "minus", "comment.line", Ready),
                     item("Arrow", "move-right", "comment.arrow", Ready),
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                     item("Cloud", "cloud", "comment.cloud", Planned("M5")),
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                     item("Stamp", "stamp", "comment.stamp", Planned("M5")),
                 ],
             },
@@ -265,8 +273,10 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             items: &[
                 item("In this file", "scan-text", "ocr.recognize", Ready),
                 item("In multiple files", "files", "ocr.recognize_batch", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Enhance scanned file", "sparkles", "ocr.enhance", Planned("M10")),
                 item("Enhance camera image", "camera", "ocr.enhance_camera", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Correct recognized text", "text-select", "ocr.correct", Planned("M10")),
             ],
         }],
@@ -277,7 +287,10 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         icon: "shield-check",
         hue: BLUE,
         badge: None,
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         availability: Planned("M8"),
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        availability: Ready,
         sections: &[
             ToolSection {
                 title: "Protect",
@@ -289,6 +302,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             ToolSection {
                 title: "Advanced options",
                 items: &[
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                     item("Encrypt with certificate", "file-lock-2", "protect.certificate", Planned("M8")),
                     item("Security properties", "shield-check", "protect.properties", Ready),
                     item("Remove security", "lock-open", "protect.remove", Ready),
@@ -326,6 +340,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             items: &[
                 item("Reduce file size", "file-down", "optimize.reduce", Ready),
                 item("Advanced optimization", "settings-2", "optimize.advanced", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Audit space usage", "gauge", "optimize.audit", Planned("M11")),
             ],
         }],
@@ -390,6 +405,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Certificates",
             items: &[
                 item("Digitally sign", "signature", "sign.digital", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Timestamp", "clock-3", "sign.timestamp", Planned("M9")),
                 item("Validate all signatures", "badge-check", "sign.validate", Ready),
                 item("Certify (visible signature)", "badge-check", "sign.certify", Ready),
@@ -403,15 +419,23 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         icon: "printer",
         hue: PURPLE,
         badge: None,
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
         availability: Planned("M11"),
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        availability: Ready,
         sections: &[ToolSection {
             title: "Print production",
             items: &[
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Output preview", "layers", "prepress.output_preview", Planned("M11")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Preflight", "file-check", "preflight.run", Planned("M11")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Convert colors", "palette", "prepress.convert_colors", Planned("M11")),
                 item("Set page boxes", "square-dashed-mouse-pointer", "page.boxes", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Add printer marks", "ruler", "prepress.marks", Planned("M11")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Fix hairlines", "minus", "prepress.hairlines", Planned("M11")),
             ],
         }],
@@ -433,6 +457,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                 item("Measurement information", "ruler", "measure.info", Ready),
                 item("Snapping", "ruler", "measure.snap", Ready),
                 item("Export measurements", "file-output", "measure.export", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Geospatial location", "compass", "measure.geo", Planned("M12")),
             ],
         }],
@@ -457,9 +482,11 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Actions list",
             items: &[
                 item("Action Wizard", "list-checks", "actions.wizard", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Make accessible", "accessibility", "actions.make_accessible", Planned("M13")),
                 item("Prepare for distribution", "send", "actions.distribution", Ready),
                 item("Optimize scanned documents", "scan-text", "actions.optimize_scans", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Archive documents", "file-check", "actions.archive", Planned("M13")),
             ],
         }],
@@ -482,6 +509,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
                 item("Open accessibility report", "file-text", "a11y.report", Ready),
                 item("Add alternate text", "image", "a11y.alt_text", Ready),
                 item("Tags panel", "tag", "a11y.tags", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Fix reading order", "list-ordered", "a11y.reading_order", Planned("M12")),
             ],
         }],
@@ -497,12 +525,16 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
             title: "Standards",
             items: &[
                 item("Save as PDF/A", "file-check", "standards.pdfa", Ready),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Save as PDF/X", "file-check", "standards.pdfx", Planned("M11")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Save as PDF/UA", "accessibility", "standards.pdfua", Planned("M11")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Preflight", "file-check", "preflight.run", Planned("M11")),
             ],
         }],
     },
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     ToolGroup {
         id: "search_index",
         label: "Add search index",
@@ -512,6 +544,7 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         availability: Planned("M12"),
         sections: &[ToolSection { title: "Index", items: &[item("Manage embedded index", "file-search", "search.index", Planned("M12"))] }],
     },
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     ToolGroup {
         id: "javascript",
         label: "Use JavaScript",
@@ -522,12 +555,16 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         sections: &[ToolSection {
             title: "JavaScript",
             items: &[
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Console", "braces", "js.console", Planned("M6")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Document JavaScripts", "file-text", "js.document", Planned("M6")),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Document actions", "list-checks", "js.actions", Planned("M6")),
             ],
         }],
     },
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     ToolGroup {
         id: "ai",
         label: "AI assistant",
@@ -538,8 +575,11 @@ pub static TOOL_GROUPS: &[ToolGroup] = &[
         sections: &[ToolSection {
             title: "Bring your own model (off by default)",
             items: &[
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Summarize", "sparkles", "ai.summary", Provider),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Ask about this document", "message-circle-reply", "ai.ask", Provider),
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 item("Translate", "languages", "ai.translate", Provider),
             ],
         }],
@@ -648,6 +688,90 @@ mod tests {
             .filter(|id| id.starts_with("edit.") && (id.ends_with(".update") || id.ends_with(".remove")))
         {
             assert!(reachable.contains(id), "{id} is in no tool menu");
+        }
+    }
+}
+
+const EMBEDDED_HIDDEN_COMMANDS: &[&str] = &[
+    "a11y.reading_order",
+    "actions.archive",
+    "actions.make_accessible",
+    "ai.ask",
+    "ai.summary",
+    "ai.translate",
+    "comment.cloud",
+    "comment.stamp",
+    "export.ps",
+    "export.xlsx",
+    "js.actions",
+    "js.console",
+    "js.document",
+    "measure.geo",
+    "ocr.correct",
+    "ocr.enhance",
+    "optimize.audit",
+    "page.transitions",
+    "preflight.run",
+    "prepress.convert_colors",
+    "prepress.hairlines",
+    "prepress.marks",
+    "prepress.output_preview",
+    "protect.certificate",
+    "sign.timestamp",
+    "standards.pdfua",
+    "standards.pdfx",
+];
+
+/// Roadmap group labels may be Planned while their individual commands already work.
+/// Embedded groups contain only working Ready commands, and are labelled Ready there.
+pub fn embedded_group_ready(group: &ToolGroup) -> bool {
+    group.availability != Availability::Provider
+        && group.sections.iter().flat_map(|s| s.items).any(|i| i.availability == Availability::Ready && crate::commands::command(i.command).is_some())
+}
+
+/// The embedded shell must never expose or dispatch placeholders or provider-backed tools.
+/// Kept target-independent so the complete desktop catalog can exercise this policy in tests.
+pub fn embedded_command_ready(id: &str) -> bool {
+    if id.starts_with("ai.") || EMBEDDED_HIDDEN_COMMANDS.contains(&id) {
+        return false;
+    }
+    if crate::commands::command(id).is_none() {
+        return false;
+    }
+    for group in TOOL_GROUPS {
+        for section in group.sections {
+            for item in section.items {
+                if item.command == id || item.actions.contains(&id) {
+                    return embedded_group_ready(group) && item.availability == Availability::Ready;
+                }
+            }
+        }
+    }
+    true
+}
+#[cfg(test)]
+mod embedded_readiness_tests {
+    use super::*;
+    #[test]
+    fn no_exposed_embedded_command_has_a_non_ready_status() {
+        for group in TOOL_GROUPS {
+            for section in group.sections {
+                for item in section.items {
+                    if embedded_command_ready(item.command) {
+                        assert!(embedded_group_ready(group), "{}", group.id);
+                        assert_eq!(item.availability, Availability::Ready, "{}", item.command);
+                    }
+                }
+            }
+        }
+        for id in ["edit.edit_text", "page.rotate", "edit.watermark", "protect.password"] {
+            assert!(embedded_command_ready(id), "{id}");
+        }
+        for id in EMBEDDED_HIDDEN_COMMANDS {
+            assert!(!embedded_command_ready(id), "{id}");
+        }
+        for id in ["ai.summary", "ai.ask", "ai.translate", "export.xlsx", "js.console", "missing.command"] {
+            assert!(!embedded_command_ready(id), "{id}");
         }
     }
 }

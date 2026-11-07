@@ -516,6 +516,7 @@ pub(crate) fn paint_page(
     view: &DocView,
     pointer: Option<Pos2>,
 ) {
+    let host_select_blue = crate::theme::surface(painter.ctx(), "accent", SELECT_BLUE);
     let cv = &view.content;
     for (i, a) in on_page(added, page) {
         if matches!(a.content, AddedContent::Image(_)) {
@@ -533,12 +534,12 @@ pub(crate) fn paint_page(
             r = dragged(r, g, p - start, matches!(a.content, AddedContent::Image(_)));
         }
         if selected {
-            painter.rect_stroke(r.expand(1.0), CornerRadius::ZERO, Stroke::new(1.5, SELECT_BLUE), egui::StrokeKind::Outside);
+            painter.rect_stroke(r.expand(1.0), CornerRadius::ZERO, Stroke::new(1.5, host_select_blue), egui::StrokeKind::Outside);
             for (c, ..) in handles(r.expand(1.0)) {
-                painter.circle(c, 3.5, Color32::WHITE, Stroke::new(1.5, SELECT_BLUE));
+                painter.circle(c, 3.5, Color32::WHITE, Stroke::new(1.5, host_select_blue));
             }
         } else if pointer.is_some_and(|p| r.expand(2.0).contains(p)) {
-            painter.rect_stroke(r.expand(1.0), CornerRadius::ZERO, Stroke::new(1.0, SELECT_BLUE.gamma_multiply(0.7)), egui::StrokeKind::Outside);
+            painter.rect_stroke(r.expand(1.0), CornerRadius::ZERO, Stroke::new(1.0, host_select_blue.gamma_multiply(0.7)), egui::StrokeKind::Outside);
         }
     }
 }

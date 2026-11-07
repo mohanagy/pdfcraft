@@ -6,6 +6,7 @@
 //! Set status, Delete), and gives each reply a "…" of its own (Edit, Copy text, Delete). Status
 //! replies show as a badge.
 
+use crate::theme::HostHoverExt as _;
 use std::collections::HashMap;
 
 use egui::{Align, Color32, CornerRadius, Layout, Sense, Stroke, vec2};
@@ -425,10 +426,10 @@ fn card(ui: &mut egui::Ui, view: &mut DocView, context: CardContext<'_>) -> Opti
                             edit = Some(Edit::MarkAnnotation { page: a.page, index: a.index, marked: !marked, author: prefs.author.clone() });
                         }
                     } else if marked {
-                        ui.add(icons::image("circle-check", 14.0, t.accent)).on_hover_text(tl!("Marked"));
+                        ui.add(icons::image("circle-check", 14.0, t.accent)).host_hover_text(tl!("Marked"));
                     }
                     if a.locked {
-                        ui.add(icons::image("lock", 13.0, t.text_faint)).on_hover_text(tl!("Locked"));
+                        ui.add(icons::image("lock", 13.0, t.text_faint)).host_hover_text(tl!("Locked"));
                     }
                     buttons_left = ui.min_rect().left();
                 });
@@ -549,7 +550,7 @@ fn card(ui: &mut egui::Ui, view: &mut DocView, context: CardContext<'_>) -> Opti
     let click = ui
         .interact(hit, ui.scope_id().with(("card", key)), Sense::click())
         .on_hover_cursor(egui::CursorIcon::PointingHand)
-        .on_hover_text(crate::i18n::fmt(tl!("{kind} — click to show it on the page"), &[("kind", tl!(kind_label(a)))]));
+        .host_hover_text(crate::i18n::fmt(tl!("{kind} — click to show it on the page"), &[("kind", tl!(kind_label(a)))]));
     if click.clicked() {
         view.comments.selected = Some(key);
         view.comments.reply.clear();

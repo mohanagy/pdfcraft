@@ -1,6 +1,8 @@
 //! Home tab: recommended tools, open card, pinned folders and recent files (local only, never
 //! another app's list).
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use egui::{Align2, CornerRadius, Rect, Sense, Stroke, vec2};
 use pdfcraft_engine::catalog;
 
@@ -30,7 +32,7 @@ fn tool_card(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static c
     let fill = press.fill(t.card, t.hover, t.pressed);
     ui.painter().rect(rect, CornerRadius::same(10), fill, Stroke::new(1.0, t.divider), egui::StrokeKind::Inside);
     let body = rect.translate(press.offset());
-    let color = egui::Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]);
+    let color = crate::theme::surface(ui.ctx(), "icon", egui::Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]));
     icons::paint(ui, Rect::from_min_size(body.min + vec2(14.0, 14.0), vec2(22.0, 22.0)), g.icon, 21.0, color);
 
     let mut unpin_clicked = false;
@@ -42,7 +44,7 @@ fn tool_card(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static c
             ui.painter().rect_filled(unpin_rect, CornerRadius::same(4), t.pressed);
         }
         icons::paint(ui, unpin_rect.shrink(4.0), "x", 14.0, t.icon);
-        if unpin_resp.on_hover_text(tl!("Unpin from Home")).clicked() {
+        if unpin_resp.host_hover_text(tl!("Unpin from Home")).clicked() {
             unpin_clicked = true;
         }
     }
@@ -60,7 +62,7 @@ fn tool_card(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static c
     let blurb_elided = galley.elided;
     ui.painter().galley(body.min + vec2(14.0, 46.0), galley, t.text_muted);
     ui.painter().text(body.left_bottom() + vec2(14.0, -14.0), Align2::LEFT_CENTER, tl!("Use now"), theme::medium(12.0), t.accent_text);
-    let resp = if title_elided || blurb_elided { resp.on_hover_text(format!("{}\n{blurb}", tl!(g.label))) } else { resp };
+    let resp = if title_elided || blurb_elided { resp.host_hover_text(format!("{}\n{blurb}", tl!(g.label))) } else { resp };
     if unpin_clicked {
         Some(g.id)
     } else {
@@ -74,7 +76,7 @@ fn tool_card(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g: &'static c
 /// Draw the Home page with the welcome text, community card and recent documents.
 pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
     let t = Tokens::get(ui.ctx());
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| {
         egui::Frame::NONE.inner_margin(egui::Margin { left: 36, right: 36, top: 28, bottom: 28 }).show(ui, |ui| {
             ui.label(egui::RichText::new(crate::display_text(tl!("Welcome to PdfCraft")).as_ref()).font(theme::semibold(24.0)));
             ui.label(
@@ -207,7 +209,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             let resp = widgets::ghost_button(ui, "trash-2", tl!("Clear"));
                             resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!("Clear Recent Files")));
-                            clear = resp.on_hover_text(tl!("Clear Recent Files")).clicked();
+                            clear = resp.host_hover_text(tl!("Clear Recent Files")).clicked();
                         });
                     }
                 });
@@ -245,7 +247,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         ui.painter().rect_filled(x_rect, CornerRadius::same(6), t.pressed);
                     }
                     icons::paint(ui, x_rect.shrink(6.0), "x", 16.0, t.icon);
-                    if x.on_hover_text(tl!("Remove from Recent")).clicked() {
+                    if x.host_hover_text(tl!("Remove from Recent")).clicked() {
                         remove = Some(r.path.clone());
                     }
                 }
@@ -269,7 +271,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 let width = detail.left() - 16.0 - (body.left() + 46.0);
                 widgets::row_text(ui, body.min + vec2(46.0, 15.0), r.name.as_str(), theme::medium(13.5), t.text, width);
                 widgets::row_text(ui, body.min + vec2(46.0, 32.0), r.path.as_str(), theme::regular(11.0), t.text_faint, width);
-                if theme::hand(resp).on_hover_text(&r.path).clicked() {
+                if theme::hand(resp).host_hover_text(&r.path).clicked() {
                     open = Some(r.path.clone());
                 }
             }
@@ -284,6 +286,9 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             }
             ui.add_space(20.0);
             widgets::section_title(ui, tl!("Privacy"));
+            #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+            ui.label(tl!("Files are processed locally."));
+            #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
             ui.label(
                 egui::RichText::new(
                     crate::display_text(tl!("PdfCraft works offline. No telemetry, no account, and no cloud processing unless you add a provider."))

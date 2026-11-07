@@ -2,6 +2,8 @@
 //! field, filling the workspace instead of the sidebar. The sidebar's expand button opens it;
 //! its collapse button, Esc or choosing a tool closes it again.
 
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 use egui::{Align2, Color32, CornerRadius, Rect, Sense, Stroke, vec2};
 use pdfcraft_engine::catalog::{self, Availability, TOOL_CATEGORIES, ToolGroup};
 
@@ -72,7 +74,7 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         });
         ui.separator();
         let query = app.all_tools_query.trim().to_lowercase();
-        egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+        egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| {
             egui::Frame::NONE.inner_margin(egui::Margin { left: 36, right: 28, top: 8, bottom: 28 }).show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 let mut any = false;
@@ -120,7 +122,7 @@ fn tile(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, items: &[&'static str]) ->
     ui.painter().rect(rect, CornerRadius::same(10), press.fill(t.card, t.hover, t.pressed), Stroke::new(1.0, t.divider), egui::StrokeKind::Inside);
     let body = rect.translate(press.offset());
     let ready = g.availability == Availability::Ready;
-    let hue = Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]);
+    let hue = crate::theme::surface(ui.ctx(), "icon", Color32::from_rgb(g.hue[0], g.hue[1], g.hue[2]));
     icons::paint(ui, Rect::from_center_size(body.center_top() + vec2(0.0, 34.0), vec2(32.0, 32.0)), g.icon, 30.0, hue);
     let mut job =
         egui::text::LayoutJob::simple(tl!(g.label).to_owned(), theme::medium(13.0), if ready { t.text } else { t.text_muted }, body.width() - 16.0);
@@ -154,9 +156,9 @@ fn tile(ui: &mut egui::Ui, t: &Tokens, g: &ToolGroup, items: &[&'static str]) ->
         let w = widgets::text_width(ui, tl!(b), &font);
         let r = Rect::from_min_size(body.right_top() + vec2(-w - 18.0, 8.0), vec2(w + 10.0, 16.0));
         ui.painter().rect_filled(r, CornerRadius::same(4), t.badge_new);
-        ui.painter().text(r.center(), Align2::CENTER_CENTER, tl!(b), font, Color32::WHITE);
+        ui.painter().text(r.center(), Align2::CENTER_CENTER, tl!(b), font, crate::theme::surface(ui.ctx(), "on_accent", Color32::WHITE));
     }
-    let resp = if elided { resp.on_hover_text(format!("{}\n{note}", tl!(g.label))) } else { resp };
+    let resp = if elided { resp.host_hover_text(format!("{}\n{note}", tl!(g.label))) } else { resp };
     theme::hand(resp)
 }
 

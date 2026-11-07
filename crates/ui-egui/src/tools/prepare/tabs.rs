@@ -1,5 +1,6 @@
 use super::draft::{ACTION_KINDS, ActionDraft, FieldDraft};
 use super::{CalcOp, Calculate, DATE_PRESETS, Format, TIME_PRESETS, Validate, format_value, theme, widgets};
+use crate::theme::HostScrollExt as _;
 
 /// The categories of the Format tab.
 #[derive(Clone, Copy, PartialEq)]
@@ -357,7 +358,7 @@ pub(super) fn calculate_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::th
             });
             ui.label(tl!("of the following fields:"));
         });
-        egui::ScrollArea::vertical().max_height(110.0).show(ui, |ui| {
+        egui::ScrollArea::vertical().max_height(110.0).host_show(ui, |ui| {
             for name in &d.others {
                 let mut on = fields.contains(name);
                 if ui.add(widgets::checkbox(&mut on, name)).changed() {

@@ -1,8 +1,10 @@
 {
-  "checkedAt": "2026-11-07T00:47:06.440410+00:00",
+  "checkedAt": "2026-11-07T07:13:56.864250+00:00",
+  "round": 3,
   "environment": "Local same-origin iframe in the in-app browser, ?host=parent; generic fixtures only",
   "protocol": 1,
   "checks": {
+    "loudTheme": true,
     "ready": true,
     "branding": true,
     "rename": true,
@@ -14,25 +16,22 @@
     "blankClean": true,
     "saveAs": true
   },
-  "manuallyObserved": {
-    "neutralStartup": true,
-    "genericSampleVisible": true,
-    "brandingAndRenameInBrowserTitle": true,
-    "dismissibleFailureNotice": true,
-    "visibleThirtySecondTimeoutNotice": true,
-    "invalidBrandingAndBooleanIgnored": true,
-    "themeAndArabicLive": true,
-    "chromeHideAndRestore": true,
-    "titlebarHiddenKeyboard": {
-      "undo": true,
-      "redo": true,
-      "save": true,
-      "find": true
-    }
-  },
+  "observed": [
+    "34 host color settings accepted",
+    "generic sample and real sticky-note edit",
+    "Organize has no Page transitions or Page templates",
+    "Edit panel retains implemented text tools and omits unavailable formatting",
+    "New and Close absent from File menu",
+    "provider command search has no matches",
+    "Preferences without Appearance",
+    "keyboard Find with titlebar hidden",
+    "dismissible failed-save notice",
+    "visible 30-second timeout notice",
+    "Save As"
+  ],
   "fullWasm": {
-    "file": "pdfcraft-web-515b13702f402178_bg.wasm",
-    "sha256": "b6d2f25e9645c1012a7dce9d7d4f6ec558c4d98a9c895cae32eeddfe0ebcb86d"
+    "file": "pdfcraft-web-10f07deed8643720_bg.wasm",
+    "sha256": "e504bab280bb041057615ca696bd47adf659608843b45dadaa14ed76c1f3ee61"
   },
-  "scope": "Bridge and interface smoke checks, including real edits and valid file signatures; not exhaustive document-fidelity or cross-browser acceptance. Lite was built and measured, not subjected to this complete browser run."
+  "scope": "Shared theme/policy unit coverage plus the listed observed interface and protocol smoke journeys. Not an exhaustive hover/dialog/document-fidelity or cross-browser acceptance run. Lite was built and measured, not subjected to the complete browser run."
 }

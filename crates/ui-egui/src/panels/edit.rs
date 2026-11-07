@@ -3,6 +3,8 @@ use super::{
     Align2, Availability, Color32, CornerRadius, LeftPanel, PdfCraftApp, Rect, Sense, Stroke, Tokens, ToolGroup, ToolItem, catalog, icons, theme,
     vec2, widgets,
 };
+use crate::theme::HostHoverExt as _;
+use crate::theme::HostScrollExt as _;
 
 /// The page operations Edit shows as a row of icon buttons, as Acrobat's Edit panel does.
 const EDIT_PAGE_BUTTONS: [&str; 4] = ["page.rotate", "page.insert", "page.delete", "page.extract"];
@@ -34,7 +36,7 @@ pub(super) fn edit_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g
         let title = if from_all_tools { tl!(g.label) } else { tl!("Edit") };
         let title_width = (ui.available_width() - 2.0 * (26.0 + ui.spacing().item_spacing.x)).max(1.0);
         ui.add_sized([title_width, 26.0], egui::Label::new(egui::RichText::new(title).font(theme::semibold(15.5)).color(t.text)).truncate())
-            .on_hover_text(title);
+            .host_hover_text(title);
         if icons::button(ui, "settings", 26.0, false, tl!("Preferences")).clicked() {
             run = Some("app.preferences");
         }
@@ -54,7 +56,7 @@ pub(super) fn edit_panel(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens, g
     }
     // Format text at the top while text is selected or being added.
     format_section(app, ui, t);
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| {
         super::tools::clear_of_scrollbar(ui);
         widgets::section_title(ui, tl!("Modify page"));
         ui.horizontal(|ui| {
@@ -173,10 +175,17 @@ fn edit_row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability
     icons::paint(ui, Rect::from_min_size(body.min + vec2(6.0, 8.0), vec2(18.0, 18.0)), icon, 17.0, if ready { t.text } else { t.text_faint });
     row_label(ui, label, theme::regular(13.5), fg, body.left_center() + vec2(34.0, 0.0), rect.width() - 42.0);
     let resp = theme::hand(resp);
-    match availability {
-        Availability::Ready => resp,
-        Availability::Planned(m) => resp.on_hover_text(format!("{} {m}", tl!("Planned for milestone"))),
-        Availability::Provider => resp.on_hover_text(tl!("Optional: needs an AI provider you configure")),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        match availability {
+            Availability::Ready => resp,
+            Availability::Planned(m) => resp.host_hover_text(format!("{} {m}", tl!("Planned for milestone"))),
+            Availability::Provider => resp.host_hover_text(tl!("Optional: needs an AI provider you configure")),
+        }
+    }
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        resp
     }
 }
 
@@ -185,7 +194,7 @@ fn edit_row(ui: &mut egui::Ui, t: &Tokens, icon: &str, label: &str, availability
 pub(super) fn stamp_palette(app: &mut PdfCraftApp, ui: &mut egui::Ui, t: &Tokens) {
     use pdfcraft_engine::{StampGroup, StampKind};
     ui.label(egui::RichText::new(tl!("Choose a stamp, then click on the page to place it.")).small().color(t.text_faint));
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+    egui::ScrollArea::vertical().auto_shrink([false, false]).host_show(ui, |ui| {
         super::tools::clear_of_scrollbar(ui);
         for (group, title) in [
             (StampGroup::Dynamic, tl!("Dynamic")),
