@@ -153,7 +153,7 @@ impl McpServer {
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false, "subscribe": false } },
-                    "serverInfo": { "name": "pdfcraft", "title": "PdfCraft", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": pdfcraft_engine::links::APP_PAGE },
+                    "serverInfo": server_info(),
                     "instructions": if self.compact { format!("{INSTRUCTIONS}{COMPACT_INSTRUCTIONS}") } else { INSTRUCTIONS.to_string() },
                 }))
             }
@@ -675,5 +675,26 @@ mod tests {
         assert_eq!(parse_uri("pdfcraft://doc/3/page/2/text"), Some(Resource::PageText(3, 2)));
         assert_eq!(parse_uri("pdfcraft://doc/x/info"), None);
         assert_eq!(parse_uri("file:///etc/passwd"), None);
+    }
+}
+
+fn server_info() -> Value {
+    let info = json!({"name":"pdfcraft", "title":"PdfCraft", "version":env!("CARGO_PKG_VERSION")});
+    #[cfg(not(feature = "offline"))]
+    let info = {
+        let mut info = info;
+        info["websiteUrl"] = json!(pdfcraft_engine::links::APP_PAGE);
+        info
+    };
+    info
+}
+
+#[cfg(all(test, feature = "offline"))]
+mod offline_tests {
+    #[test]
+    fn initialization_has_no_outside_links() {
+        assert!(super::server_info().get("websiteUrl").is_none());
+        assert!(!super::INSTRUCTIONS.contains("https://"));
+        assert!(!super::INSTRUCTIONS.contains("http://"));
     }
 }

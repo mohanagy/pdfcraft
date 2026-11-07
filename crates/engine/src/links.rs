@@ -27,7 +27,7 @@ pub struct Link {
 }
 
 /// In the order they are shown. Discord comes first: it is where people get help fastest.
-#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+#[cfg(not(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32"))))]
 pub const LINKS: &[Link] = &[
     Link { command: "help.discord", label: "Join the ArtCraft Discord", url: DISCORD, icon: "messages-square" },
     Link { command: "help.app_page", label: "PdfCraft web page", url: APP_PAGE, icon: "globe" },
@@ -35,7 +35,7 @@ pub const LINKS: &[Link] = &[
     Link { command: "help.website", label: "ArtCraft website", url: WEBSITE, icon: "external-link" },
 ];
 
-#[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+#[cfg(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32")))]
 pub const LINKS: &[Link] = &[];
 
 pub fn for_command(id: &str) -> Option<&'static Link> {
@@ -455,3 +455,14 @@ fn mixes_scripts(label: &str) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(all(test, feature = "offline"))]
+mod offline_tests {
+    #[test]
+    fn help_has_no_external_links_or_update_commands() {
+        assert!(super::LINKS.is_empty());
+        for id in ["help.discord", "help.app_page", "help.github", "help.website", "help.check_updates"] {
+            assert!(crate::commands::command(id).is_none(), "{id}");
+        }
+    }
+}

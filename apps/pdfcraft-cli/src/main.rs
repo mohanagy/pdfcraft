@@ -57,6 +57,7 @@ mod check;
 mod commands;
 mod options;
 mod run;
+#[cfg(not(feature = "offline"))]
 mod ui;
 
 use check::{audit, check, check_one};
@@ -65,9 +66,25 @@ use options::{OptionSpec, flag, validate_options};
 #[cfg(feature = "mcp")]
 use run::mcp;
 use run::{automation, print_output, run, tools};
+#[cfg(not(feature = "offline"))]
 use ui::ui;
 
 /// The full usage, printed by `--help` (also after a command, e.g. `render --help`).
+#[cfg(not(feature = "offline"))]
+macro_rules! network_usage {
+    () => {
+        "pdfcraft-cli ui     --control FILE <method> [key=value …] [--out shot.png]
+                                                           drive a running app started with --control FILE
+help and feedback: https://discord.gg/artcraft"
+    };
+}
+#[cfg(feature = "offline")]
+macro_rules! network_usage {
+    () => {
+        "Offline build: MCP uses stdio; omitted automation roots grant no file access."
+    };
+}
+
 const USAGE: &str = concat!(
     "\
 pdfcraft-cli info   <file.pdf> [--password PW]            document summary as JSON
@@ -91,10 +108,7 @@ pdfcraft-cli run    --script steps.json [--root DIR] [--report]
                       [{\"tool\": \"doc_open\", \"args\": {…}}, …]; --report prints one JSON document for the run
 ",
     mcp_usage!(),
-    "\
-pdfcraft-cli ui     --control FILE <method> [key=value …] [--out shot.png]
-                                                           drive a running app started with --control FILE
-help and feedback: https://discord.gg/artcraft"
+    network_usage!()
 );
 
 fn main() -> ExitCode {
@@ -137,6 +151,7 @@ fn main() -> ExitCode {
         Some("tools") => tools(),
         Some("run") => run(&args[1..]),
         Some("batch") => batch::run(&args[1..]),
+        #[cfg(not(feature = "offline"))]
         Some("ui") => ui(&args[1..]),
         #[cfg(feature = "mcp")]
         Some("mcp") => mcp(&args[1..]),
@@ -190,8 +205,21 @@ fn stdout_line(line: std::fmt::Arguments<'_>) -> Result<(), CliError> {
 
 fn version() -> Result<(), CliError> {
     stdout_line(format_args!("pdfcraft-cli {}", pdfcraft_engine::build_info::version()))?;
-    stdout_line(format_args!("Discord: {}  (help and feedback)", pdfcraft_engine::links::DISCORD))?;
-    stdout_line(format_args!("Web:     {}", pdfcraft_engine::links::APP_PAGE))?;
-    stdout_line(format_args!("Source:  {}", pdfcraft_engine::links::GITHUB))?;
+    #[cfg(not(feature = "offline"))]
+    {
+        stdout_line(format_args!("Discord: {}  (help and feedback)", pdfcraft_engine::links::DISCORD))?;
+        stdout_line(format_args!("Web:     {}", pdfcraft_engine::links::APP_PAGE))?;
+        stdout_line(format_args!("Source:  {}", pdfcraft_engine::links::GITHUB))?;
+    }
     Ok(())
+}
+
+#[cfg(all(test, feature = "offline"))]
+mod offline_tests {
+    #[test]
+    fn help_has_no_network_bridge_or_feedback_links() {
+        assert!(!super::USAGE.contains("pdfcraft-cli ui"));
+        assert!(!super::USAGE.contains("http://"));
+        assert!(!super::USAGE.contains("https://"));
+    }
 }

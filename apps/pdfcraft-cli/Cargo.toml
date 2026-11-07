@@ -38,5 +38,7 @@ winresource = "0.1"
 
 [features]
 default = ["mcp"]
+# Standalone CLI profile: stdio MCP only, no app bridge or outside links.
+offline = ["pdfcraft-automation/offline", "pdfcraft-engine/offline"]
 # The opt-in MCP server (`pdfcraft-cli mcp`). Build with --no-default-features to leave it out.
 mcp = ["pdfcraft-automation/mcp"]

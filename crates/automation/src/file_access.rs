@@ -61,6 +61,11 @@ impl Root {
 }
 
 impl AutomationRoots {
+    /// Deny every automation read and write when neither capability was granted.
+    pub fn deny_all() -> Arc<Self> {
+        Arc::new(Self { read: None, write: None })
+    }
+
     /// The roots `read` and `write`, which must be existing folders; `None` when neither is given
     /// (nothing is confined then).
     pub fn new(read: Option<&Path>, write: Option<&Path>) -> Result<Option<Arc<Self>>, String> {
@@ -447,5 +452,15 @@ mod tests {
             }
         }
         assert!(offenders.is_empty(), "resolve the path with `self.resolve` first: {offenders:#?}");
+    }
+}
+
+#[cfg(test)]
+mod denied_capability_tests {
+    #[test]
+    fn no_capabilities_refuse_existing_reads_and_new_writes() {
+        let roots = super::AutomationRoots::deny_all();
+        assert!(roots.check("Cargo.toml", super::Access::Read).is_err());
+        assert!(roots.check("not-created.pdf", super::Access::Write).is_err());
     }
 }

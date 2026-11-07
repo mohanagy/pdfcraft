@@ -64,3 +64,4 @@ pdfcraft-filters = { workspace = true }
 
 [features]
 embedded = []
+offline = []

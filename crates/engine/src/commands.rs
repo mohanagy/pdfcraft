@@ -403,15 +403,15 @@ pub const COMMANDS: &[CommandSpec] = &[
     c("page.number", "Number pages…", PAGES, None, Assembly, "hash"),
     c("page.properties", "Page properties…", PAGES, None, Modification, "info"),
     c("help.shortcuts", "Keyboard shortcuts", HELP, None, Nothing, "circle-help"),
-    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    #[cfg(not(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32"))))]
     c("help.discord", "Join the ArtCraft Discord", HELP, None, Nothing, "messages-square"),
-    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    #[cfg(not(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32"))))]
     c("help.app_page", "PdfCraft web page", HELP, None, Nothing, "globe"),
-    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    #[cfg(not(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32"))))]
     c("help.github", "PdfCraft on GitHub", HELP, None, Nothing, "code-xml"),
-    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    #[cfg(not(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32"))))]
     c("help.website", "ArtCraft website", HELP, None, Nothing, "external-link"),
-    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    #[cfg(not(any(feature = "offline", all(feature = "embedded", target_arch = "wasm32"))))]
     c("help.check_updates", "Check for updates…", HELP, None, Nothing, "cloud"),
     c("help.about", embedded_about_label(), HELP, None, Nothing, "info"),
 ];

@@ -163,6 +163,12 @@ fn automation_roots(command: &str, args: &[String]) -> Result<(Option<Arc<pdfcra
 #[cfg(feature = "mcp")]
 pub(crate) fn mcp(args: &[String]) -> Result<(), CliError> {
     let (roots, args) = automation_roots("mcp", args)?;
+    #[cfg(feature = "offline")]
+    let roots = if roots.is_none() && flag(&args, "--root").is_some() {
+        None // An explicit --root already grants confined read and write access.
+    } else {
+        Some(roots.unwrap_or_else(pdfcraft_automation::file_access::AutomationRoots::deny_all))
+    };
     let args = args.as_slice();
     validate_options("mcp", args, MCP_OPTIONS)?;
     let compact = args.iter().any(|a| a == "--compact");
