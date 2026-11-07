@@ -30,6 +30,10 @@ const STRIP_BUTTON: f32 = 28.0;
 /// Draw the window's tab strip: home and open controls, shrinkable and scrollable document tabs with drag
 /// reordering, and platform window controls.
 pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    if !crate::embedded::visible(ui.ctx(), "titlebar") {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     // macOS: the strip is the 28 pt title bar, so the traffic lights are centred in it; tabs and
     // buttons shrink to keep a margin above and below.
@@ -65,17 +69,33 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     });
                     ui.add_space(window_controls::SIDE_GAP - 4.0);
                 }
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 if icons::button(ui, "house", button, app.active.is_none() && !app.combine_showing(), tl!("Home")).clicked() {
                     app.active = None;
                     app.combine_tab.focused = false;
                 }
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                if crate::embedded::visible(ui.ctx(), "homeTab") && icons::button(ui, "house", button, app.active.is_none(), tl!("Home")).clicked() {
+                    app.active = None;
+                    app.combine_tab.focused = false;
+                }
                 // Reserve the three icon buttons, Discord and their gaps outside the scrolling tabs.
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 let controls_width = ui.fonts_mut(|f| f.layout_no_wrap("Discord".into(), theme::medium(13.0), t.text).size().x)
                     + 3.0 * button
                     + 54.0
                     + window_controls::width(&controls.right);
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                let controls_width = 3.0 * button + 12.0 + window_controls::width(&controls.right);
                 // Open stays in sight after the tabs: its icon, text and padding, and the gaps around it.
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 let open_width = ui.fonts_mut(|f| f.layout_no_wrap(tl!("Open").into(), theme::medium(13.0), t.text).size().x) + 38.0 + 12.0;
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                let open_width = if crate::embedded::visible(ui.ctx(), "openTab") {
+                    ui.fonts_mut(|f| f.layout_no_wrap(tl!("Open").into(), theme::medium(13.0), t.text).size().x) + 50.0
+                } else {
+                    0.0
+                };
                 let mut tabs_width = (ui.available_width() - controls_width - open_width).max(0.0);
                 // Tabs shrink to share the strip (names end in "…") and scroll only once they reach
                 // their narrowest; then arrows either side say so and step through them.
@@ -273,8 +293,15 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                 }
                 ui.add_space(4.0);
                 let tip = crate::commands::command_tip(ui.ctx(), tl!("Open a PDF ({key})"), "file.open");
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 if widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).on_hover_text(tip).clicked() {
                     app.open_dialog();
+                }
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                if crate::embedded::visible(ui.ctx(), "openTab")
+                    && widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).on_hover_text(&tip).clicked()
+                {
+                    app.execute("file.open");
                 }
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if !controls.right.is_empty() {
@@ -310,6 +337,7 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                         app.dialog = Some(Dialog::Shortcuts);
                     }
                     // One click to the community, from anywhere in the app.
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                     if widgets::ghost_button_sized(ui, "messages-square", "Discord", tab_h).on_hover_text(pdfcraft_engine::links::DISCORD).clicked() {
                         app.execute("help.discord");
                     }
@@ -478,6 +506,10 @@ fn tab(ui: &mut egui::Ui, spec: TabSpec<'_>, close: &mut Option<usize>) -> egui:
 }
 
 pub fn mode_bar(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    if !crate::embedded::visible(ui.ctx(), "modebar") {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     egui::Panel::top("mode_bar")
         .exact_size(48.0)

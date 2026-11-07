@@ -64,8 +64,13 @@ fn craft_i18n() -> String {
     let mut o = String::from("/// (locale, shared catalog, PdfCraft's catalog), one entry per locale; `\"\"` for a missing file.\n");
     o.push_str("pub static CRAFT_I18N: &craft_i18n::Embedded = &[\n");
     for (code, shared, app) in entries {
+        let lite = std::env::var_os("CARGO_FEATURE_EMBEDDED_LITE").is_some() && std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|s| s == "wasm32");
+        if lite && ["zh-hans", "zh-hant", "ja", "ko", "uk", "ru", "bg", "sr", "th", "hi", "te", "ka"].contains(&code.as_str()) {
+            continue;
+        }
+        let app = embedded_catalog(&app);
         // `{:?}` escapes the path (Windows backslashes) as a Rust string literal.
-        let shared = shared.map_or_else(|| "\"\"".to_string(), |p| format!("include_str!({p:?})"));
+        let shared = shared.map_or_else(|| "\"\"".to_string(), |p| format!("include_str!({:?})", embedded_catalog(&p)));
         let _ = writeln!(o, "    ({code:?}, {shared}, include_str!({app:?})),");
     }
     o.push_str("];\n");
@@ -184,4 +189,31 @@ fn generate(json: &Value, people: &toml::Table) -> String {
     }
     let _ = writeln!(o, "];");
     o
+}
+
+fn embedded_catalog(path: &std::path::Path) -> std::path::PathBuf {
+    let embedded = std::env::var_os("CARGO_FEATURE_EMBEDDED").is_some() && std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|s| s == "wasm32");
+    if !embedded {
+        return path.to_path_buf();
+    }
+    let locale = path.parent().and_then(|p| p.file_name()).unwrap_or_default().to_string_lossy();
+    let name = path.file_name().unwrap_or_default().to_string_lossy();
+    let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap_or_default()).join(format!("embedded-{locale}-{name}"));
+    match std::fs::read_to_string(path).and_then(|s| {
+        let text = s
+            .lines()
+            .filter(|l| {
+                let l = l.to_ascii_lowercase();
+                !["discord", "getartcraft.com", "github.com/storytold"].iter().any(|needle| l.contains(needle))
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        std::fs::write(&out, text + "\n")
+    }) {
+        Ok(()) => out,
+        Err(e) => {
+            println!("cargo::error=embedding {}: {e}", path.display());
+            path.to_path_buf()
+        }
+    }
 }

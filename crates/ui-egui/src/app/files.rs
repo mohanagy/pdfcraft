@@ -709,6 +709,10 @@ impl PdfCraftApp {
     }
 
     pub fn open_dialog(&mut self) {
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        if self.ctx.as_ref().is_some_and(|ctx| !crate::embedded::visible(ctx, "openTab")) {
+            return;
+        }
         self.startup_superseded = true;
         #[cfg(not(target_arch = "wasm32"))]
         self.pick(

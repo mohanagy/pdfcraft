@@ -430,6 +430,8 @@ pub fn apply(ctx: &egui::Context, kind: ThemeKind) {
     ctx.set_theme(egui::ThemePreference::System);
     let rtl = crate::i18n::current().rtl();
     let t = Tokens::for_kind(kind);
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    let t = crate::embedded::tokens(ctx, t);
     ctx.data_mut(|d| d.insert_temp(egui::Id::unique("pdfcraft-theme"), t));
     let mut v = if t.dark() { Visuals::dark() } else { Visuals::light() };
     v.panel_fill = t.panel;

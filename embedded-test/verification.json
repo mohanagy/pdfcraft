@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-11-07T00:47:06.440410+00:00",
+  "base": "8bb0528bed785283452263b0290321ccf95859be",
+  "branch": "embed/profile",
+  "pushes": false,
+  "workspaceUnitRun": {
+    "passed": 3988,
+    "failed": 0,
+    "ignored": 5,
+    "command": "cargo test --workspace --lib --bins --features pdfcraft-ui-egui/embedded -- --test-threads=4"
+  },
+  "targetedFinalProtocolTests": {
+    "passed": 5,
+    "failed": 0,
+    "command": "cargo test -p pdfcraft-ui-egui --lib --features embedded host_ -- --test-threads=1"
+  },
+  "strictEmbeddedFeatureClippy": "PASS",
+  "formatAndDiffCheck": "PASS",
+  "defaultCi": {
+    "status": "FAIL_PREEXISTING",
+    "test": "control::preferences_menu_and_shortcut_allow_switching_interface_languages",
+    "assertion": "crates/ui-egui/tests/it/control.rs:1088; requested Preferences menu row not found",
+    "reproducedOnUnmodifiedBase": "8bb0528bed785283452263b0290321ccf95859be",
+    "otherFailedTargets": 0,
+    "passedBeforeTest": "fmt, strict workspace clippy, cli-no-default-features",
+    "independentChecks": "layers: 37 crates PASS; assets PASS; default wasm: 31 crates PASS",
+    "laterCiStagesNotRun": "i18n-report, license-check, deny, parity; CI stopped at the existing integration failure"
+  },
+  "fullAndLiteRelease": "PASS: Trunk release, pinned translations/fonts, Binaryen -Oz",
+  "sizeReports": [
+    "size-web.json",
+    "size-web-lite.json"
+  ],
+  "stringAudit": "artifact-search.json",
+  "browserChecks": "browser-results.json",
+  "limits": [
+    "Ignored tests were not run.",
+    "The original host blank-document bytes were not provided; exact original normalization cause is unknown.",
+    "Protocol 1 has no save IDs; see CHANGES.md for conservative timeout/late-ack handling.",
+    "Optional lite build measured; full browser protocol acceptance used the full embedded build."
+  ]
+}

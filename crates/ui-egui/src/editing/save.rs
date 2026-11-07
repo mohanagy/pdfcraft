@@ -39,6 +39,10 @@ impl PdfCraftApp {
     /// [`Self::save_view`], then `after` once the document is written: now, or on a later frame
     /// when the user had to choose where. `after` never runs when the save fails or is cancelled.
     pub(crate) fn save_then(&mut self, index: usize, target: SaveTarget, after: impl FnOnce(&mut Self) + Send + 'static) -> bool {
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        if self.ctx.as_ref().is_some_and(|ctx| crate::host_state::state(ctx).lock().unwrap_or_else(|e| e.into_inner()).pending.is_some()) {
+            return false;
+        }
         // What's typed in a field is part of what's saved (#166).
         if let Some(id) = self.views.get(index).map(|v| v.id)
             && !self.commit_typing_in(id)
@@ -91,6 +95,20 @@ impl PdfCraftApp {
             };
             match delivered {
                 Ok(()) => {
+                    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                    if to_host {
+                        if let Some(ctx) = self.ctx.clone() {
+                            let revision = self.session.get(id).map(|d| d.edit_generation()).unwrap_or(0);
+                            match crate::embedded::begin_save(&ctx, id.0, revision, Some(bytes.clone())) {
+                                Ok(true) => return false,
+                                Ok(false) => crate::embedded::normal_saved(&ctx, id.0),
+                                Err(error) => {
+                                    crate::host_state::state(&ctx).lock().unwrap_or_else(|e| e.into_inner()).error = Some(error);
+                                    return false;
+                                }
+                            }
+                        }
+                    }
                     let _ = self.session.mark_saved(id, bytes, None);
                     if let Some(doc) = self.session.get(id)
                         && let Some(view) = self.views.get_mut(index)

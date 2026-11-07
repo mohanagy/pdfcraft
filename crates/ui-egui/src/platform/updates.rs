@@ -10,6 +10,7 @@ use craft_update::{CheckResultDialog, CheckResultResponse};
 use crate::PdfCraftApp;
 
 /// Where every PdfCraft release is listed.
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub const RELEASES_PAGE: &str = "https://github.com/storytold/pdfcraft/releases";
 
 /// Stands in for the network in tests.
@@ -62,7 +63,7 @@ impl PdfCraftApp {
             self.updates.open = true;
             self.updates.check_requested = true;
         }
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", not(feature = "embedded")))]
         {
             self.open_url(RELEASES_PAGE);
         }

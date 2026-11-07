@@ -1,0 +1,39 @@
+<!doctype html><meta charset="utf-8"><title>Embedded editor protocol checks</title>
+<style>body{font:14px system-ui;margin:12px;background:#eee}button,input{margin:3px}iframe{width:100%;height:800px;border:1px solid #888;background:white}pre{white-space:pre-wrap;max-height:190px;overflow:auto}.ok{color:#075e21}</style>
+<h1>Embedded editor protocol checks</h1>
+<p>Generic local fixtures only. Edit inside the editor before running Dirty Save. Use keyboard undo, redo, Save and Find while titlebar is hidden. Check Save As with Cmd/Ctrl+Shift+S inside the editor. Failure and timeout notices have their own dismiss button.</p>
+<button id="clean">Run clean protocol checks</button><button id="dirty">Check dirty Save</button><button id="fail">Check failed acknowledgement</button><button id="timeout">Check 30-second timeout</button><button id="blank">Open blank</button><button id="sample">Open sample</button>
+<br><input id="name" value="Renamed.pdf" aria-label="Document name"><button id="rename">Rename</button><button id="request">Request Save</button><button id="yes">Acknowledge stored</button><button id="no">Acknowledge failed</button>
+<br><input id="brand" value="Sample Editor" aria-label="Brand name"><button id="branding">Apply branding</button><button id="hide">Hide chrome</button><button id="show">Restore chrome</button><button id="dark">Dark</button><button id="ar">Arabic</button><button id="en">English</button><button id="theme">Sample theme</button><button id="system">System</button><button id="invalid">Invalid fields</button>
+<p id="checks"></p><pre id="log"></pre><iframe id="editor" title="Embedded editor" src="../dist/web/?host=parent"></iframe>
+<script>
+const app='pdfcraft', frame=document.getElementById('editor'), log=document.getElementById('log');
+const results={ready:false,branding:false,rename:false,cleanRequest:false,dirtyRequest:false,ackSuccess:false,ackFailure:false,timeout:false,blankClean:false,saveAs:false};let dirty=false,lastSave=null,ready=false;
+const waiters=[];function note(s){log.textContent+=s+'\n';log.scrollTop=log.scrollHeight;document.getElementById('checks').textContent=JSON.stringify(results);}
+function post(type,fields={}){frame.contentWindow.postMessage({type:app+':'+type,...fields},location.origin);}
+function wait(type,predicate=()=>true,ms=7000){return new Promise((resolve,reject)=>{const w={type,predicate,resolve};waiters.push(w);w.timer=setTimeout(()=>{const i=waiters.indexOf(w);if(i>=0)waiters.splice(i,1);reject(Error('Timed out: '+type));},ms);});}
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+async function config(fields){const done=wait('configured');post('configure',fields);const reply=await done;await pause(150);return reply;}
+async function open(which){const changed=wait('dirty',d=>d.dirty===false);const bytes=await(await fetch(which+'.pdf')).arrayBuffer();frame.contentWindow.postMessage({type:app+':open',name:which+'.pdf',bytes},location.origin,[bytes]);await changed;await pause(200);if(which==='blank')results.blankClean=!dirty;note('Opened '+which+'; dirty='+dirty);}
+async function save(){const done=wait('save',d=>d.saveAs===false);post('requestSave');const d=await done;if(!d.valid)throw Error('Invalid saved file signature');return d;}
+async function clean(){await config({branding:{name:'Sample Editor'},chrome:{"titlebar": false, "homeTab": false, "openTab": false},ackSave:false,colorScheme:'light',locale:'en'});await open('blank');post('rename',{name:'Renamed.pdf'});await pause(350);results.rename=frame.contentDocument.title.includes('Renamed');results.branding=frame.contentDocument.title.includes('Sample Editor');await save();results.cleanRequest=true;
+await config({ackSave:true});const pending=wait('dirty',d=>d.dirty===true);await save();await pending;const confirmed=wait('dirty',d=>d.dirty===false);post('saved',{ok:true});await confirmed;results.ackSuccess=true;note('Clean protocol checks complete');}
+async function dirtySave(){if(!dirty)throw Error('First make a real document edit');await config({ackSave:false});await save();results.dirtyRequest=true;note('Dirty document requestSave delivered saveAs:false');}
+async function failed(){await config({ackSave:true});const pending=wait('dirty',d=>d.dirty===true);await save();await pending;post('saved',{ok:false,error:'Generic storage failure'});await pause(350);results.ackFailure=dirty;note('Failure remains dirty; verify dismissible Not saved notice inside editor');}
+async function timeout(){await config({ackSave:true});await save();note('Waiting 31 seconds for the acknowledgement deadline');await pause(31000);results.timeout=dirty;note('Timeout remains dirty; verify the Not saved timeout notice inside editor');}
+function run(fn){fn().catch(e=>note('FAIL: '+e.message));}
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==frame.contentWindow)return;const d=event.data;if(!d||typeof d.type!=='string'||!d.type.startsWith(app+':'))return;const type=d.type.slice(app.length+1);
+if(type==='ready'){ready=true;results.ready=d.protocol===1&&typeof d.version==='string';note('ready '+JSON.stringify(d));}
+if(type==='dirty'){dirty=d.dirty;note('dirty '+dirty);}
+if(type==='configured')note('configured '+JSON.stringify(d));
+if(type==='save'){const bytes=new Uint8Array(d.bytes);d.valid=bytes.length>20&&bytes[0]===37&&bytes[1]===80&&bytes[2]===68&&bytes[3]===70;if(d.valid&&d.saveAs===true)results.saveAs=true;lastSave={name:d.name,saveAs:d.saveAs,length:bytes.length,valid:d.valid};note('save '+JSON.stringify(lastSave));}
+for(const w of [...waiters])if(w.type===type&&w.predicate(d)){clearTimeout(w.timer);waiters.splice(waiters.indexOf(w),1);w.resolve(d);}
+});
+const bind=(id,fn)=>document.getElementById(id).onclick=()=>run(fn);
+bind('clean',clean);bind('dirty',dirtySave);bind('fail',failed);bind('timeout',timeout);bind('blank',()=>open('blank'));bind('sample',()=>open('sample'));
+bind('rename',async()=>{post('rename',{name:document.getElementById('name').value});await pause(300);note('iframe title: '+frame.contentDocument.title);});
+bind('request',save);bind('yes',async()=>post('saved',{ok:true}));bind('no',async()=>post('saved',{ok:false,error:'Generic storage failure'}));
+bind('branding',()=>config({branding:{name:document.getElementById('brand').value}}));bind('hide',()=>config({chrome:{"titlebar": false, "homeTab": false, "openTab": false}}));bind('show',()=>config({chrome:{"titlebar": true, "homeTab": true, "openTab": true}}));bind('dark',()=>config({colorScheme:'dark'}));bind('ar',()=>config({locale:'ar'}));bind('en',()=>config({locale:'en'}));
+bind('theme',()=>config({theme:{accent:'#116644',accentText:'#ffffff',accentSoft:'#ddffee'}}));bind('system',()=>config({colorScheme:'system'}));
+bind('invalid',async()=>{const d=await config({branding:{name:'x'.repeat(41),unknown:true},ackSave:'yes',chrome:{comments:'false'},unexpected:true});note('Invalid-field rejection: '+JSON.stringify(d));post('rename',{name:'../bad'});});
+</script>

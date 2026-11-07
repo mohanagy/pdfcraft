@@ -21,7 +21,10 @@ use crate::{PdfCraftApp, RightPanel};
 pub(super) mod tab_context;
 
 /// The app's name in the menus the layouts write (About, Hide, Quit).
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub(crate) const APP_NAME: &str = "PdfCraft";
+#[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+pub(crate) const APP_NAME: &str = "Editor";
 
 /// The top bar's width after the menus: the mode tabs, the search box and the buttons.
 const ROW_AFTER_MENUS: f32 = 720.0;
@@ -223,6 +226,7 @@ const SIGN: &[&str] = &[
     "sign.panel",
 ];
 const WINDOW: &[&str] = &["view.next_tab", "view.previous_tab"];
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 const HELP: &[&str] =
     &["help.shortcuts", SEP, "help.app_page", "help.github", "help.website", "help.discord", SEP, "help.check_updates", SEP, "help.about"];
 
@@ -238,6 +242,9 @@ fn extra(id: &str) -> Option<&'static (&'static str, &'static str, Option<Shortc
 }
 
 /// The English label of an item's command, for the bar's mnemonics.
+#[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+const HELP: &[&str] = &["help.shortcuts", SEP, "help.about"];
+
 fn english_label(command: &CommandRef) -> Option<String> {
     if let Some(spec) = commands::command(&command.id) {
         return Some(spec.label.to_owned());
@@ -264,7 +271,7 @@ fn translate(english: &'static str) -> String {
     if english == "\u{22ef}" {
         return "…".to_owned();
     }
-    tl!(english).to_owned()
+    crate::display_text(tl!(english)).into_owned()
 }
 
 /// The layouts' own labels (About, Quit, Window…) through the app's translations.
@@ -280,6 +287,7 @@ impl PdfCraftApp {
         let mut used: Vec<&str> = Vec::new();
         let list = |ids: &[&'static str], used: &mut Vec<&'static str>| -> Vec<Node> {
             ids.iter()
+                .filter(|&&id| embedded_menu_visible(ctx, id))
                 .map(|&id| {
                     if id == SEP {
                         return Node::Separator;
@@ -573,7 +581,9 @@ impl PdfCraftApp {
     /// couldn't be installed), where the top bar starts. Runs the commands chosen.
     pub(crate) fn menu_bar_ui(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
-        let bar = craft_menu::layout(&self.menu_bar(&ctx), Target::current(), &layout_options()).bar;
+        let name = crate::display_text("PdfCraft");
+        let options = LayoutOptions { app_name: name.as_ref(), ..layout_options() };
+        let bar = craft_menu::layout(&self.menu_bar(&ctx), Target::current(), &options).bar;
         let gate = self.menu_gate(&ctx);
         // The mode tabs, search and buttons follow the bar in the same row: it takes its titles'
         // width, less when the row is short, where the menus that don't fit move into its "⋯".
@@ -636,6 +646,18 @@ fn param_index(command: &CommandRef) -> Option<usize> {
 fn panel(command: &CommandRef) -> Option<RightPanel> {
     let name = command.params.get("panel").and_then(serde_json::Value::as_str)?;
     PANELS.iter().find(|(_, n, _)| *n == name).map(|(p, ..)| *p)
+}
+
+fn embedded_menu_visible(ctx: &egui::Context, id: &str) -> bool {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        id == SEP || (!id.starts_with("help.") || commands::command(id).is_some()) && crate::embedded::command_allowed(ctx, id)
+    }
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        let _ = (ctx, id);
+        true
+    }
 }
 
 #[cfg(test)]

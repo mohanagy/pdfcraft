@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-11-07T00:47:06.440410+00:00",
+  "environment": "Local same-origin iframe in the in-app browser, ?host=parent; generic fixtures only",
+  "protocol": 1,
+  "checks": {
+    "ready": true,
+    "branding": true,
+    "rename": true,
+    "cleanRequest": true,
+    "dirtyRequest": true,
+    "ackSuccess": true,
+    "ackFailure": true,
+    "timeout": true,
+    "blankClean": true,
+    "saveAs": true
+  },
+  "manuallyObserved": {
+    "neutralStartup": true,
+    "genericSampleVisible": true,
+    "brandingAndRenameInBrowserTitle": true,
+    "dismissibleFailureNotice": true,
+    "visibleThirtySecondTimeoutNotice": true,
+    "invalidBrandingAndBooleanIgnored": true,
+    "themeAndArabicLive": true,
+    "chromeHideAndRestore": true,
+    "titlebarHiddenKeyboard": {
+      "undo": true,
+      "redo": true,
+      "save": true,
+      "find": true
+    }
+  },
+  "fullWasm": {
+    "file": "pdfcraft-web-515b13702f402178_bg.wasm",
+    "sha256": "b6d2f25e9645c1012a7dce9d7d4f6ec558c4d98a9c895cae32eeddfe0ebcb86d"
+  },
+  "scope": "Bridge and interface smoke checks, including real edits and valid file signatures; not exhaustive document-fidelity or cross-browser acceptance. Lite was built and measured, not subjected to this complete browser run."
+}

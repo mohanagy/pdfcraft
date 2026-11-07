@@ -823,6 +823,10 @@ impl PdfCraftApp {
     pub(crate) fn has_unsaved_work(&self, index: usize) -> bool {
         let Some(v) = self.views.get(index) else { return false };
         let Some(doc) = self.session.get(v.id) else { return false };
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        if self.ctx.as_ref().is_some_and(|ctx| crate::embedded::unconfirmed(ctx, v.id.0)) {
+            return true;
+        }
         doc.dirty
             || v.pending_edit.is_some()
             || v.content.blocked().is_some()

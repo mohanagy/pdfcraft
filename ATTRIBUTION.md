@@ -4,7 +4,7 @@
 
 Every asset PdfCraft includes, bundles or uses to build its published material, with its author, source and licence. The policy is in [AGENTS.md](AGENTS.md) §1. The machine-readable list, with the SHA-256 of every asset, is [ATTRIBUTION.toml](ATTRIBUTION.toml). Licence texts are kept beside the assets and summarised in [NOTICE](NOTICE).
 
-## In this repository (255)
+## In this repository (257)
 
 | Asset | Title | Author | Licence | Source | Used for |
 |---|---|---|---|---|---|
@@ -263,6 +263,8 @@ Every asset PdfCraft includes, bundles or uses to build its published material, 
 | `assets/icons/subscript.svg` | Lucide icon "subscript" | Lucide Contributors (portions Cole Bemis, Feather) | ISC AND MIT | https://github.com/lucide-icons/lucide (npm lucide-static 1.49.0, icons/subscript.svg) | UI icon, embedded via crates/ui-egui/src/icon_data.rs |
 | `assets/icons/pilcrow.svg` | Lucide icon "pilcrow" | Lucide Contributors (portions Cole Bemis, Feather) | ISC AND MIT | https://github.com/lucide-icons/lucide (npm lucide-static 1.49.0, icons/pilcrow.svg) | UI icon, embedded via crates/ui-egui/src/icon_data.rs |
 | `assets/icons/move-horizontal.svg` | Lucide icon "move-horizontal" | Lucide Contributors (portions Cole Bemis, Feather) | ISC AND MIT | https://github.com/lucide-icons/lucide (npm lucide-static 1.49.0, icons/move-horizontal.svg) | UI icon, embedded via crates/ui-egui/src/icon_data.rs |
+| `embedded-test/sample.pdf` | Embedded PDF sample | PdfCraft contributors | MIT OR Apache-2.0 | Original synthetic text-only fixture for embedded-test/index.html | Local iframe bridge smoke test; no font programs or third-party artwork |
+| `embedded-test/blank.pdf` | Blank host-open fixture | PdfCraft contributors | MIT OR Apache-2.0 | Original synthetic one-page empty PDF for host protocol testing | Blank-document dirty-state regression |
 
 ## Compiled in through dependencies (6)
 

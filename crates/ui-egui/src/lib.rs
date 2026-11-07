@@ -60,6 +60,10 @@ mod hotbar;
 mod panels;
 pub use print_ui::{Handling as PrintHandling, OptionsSource, PrintDraft, PrinterSource, Which as PrintWhich, system_printers};
 pub use redact_ui::{HiddenDraft, PagesDraft as RedactPagesDraft, RedactPrefs, SearchDraft as RedactSearchDraft, SearchMode as RedactSearchMode};
+#[cfg(feature = "embedded")]
+pub mod embedded;
+#[cfg(feature = "embedded")]
+pub mod host_state;
 pub mod i18n;
 pub mod theme;
 mod widgets;
@@ -671,4 +675,16 @@ pub struct PdfCraftApp {
     pub pending_full_screen: Option<DocId>,
     /// An absolute GoToR target waiting for approval, before any target-file I/O (#1364).
     pub pending_remote_link: Option<PendingRemoteLink>,
+}
+
+/// App-owned UI text only; document content and package attribution are never rewritten.
+pub fn display_text(text: &str) -> std::borrow::Cow<'_, str> {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        std::borrow::Cow::Owned(embedded::brand_text(text))
+    }
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        std::borrow::Cow::Borrowed(text)
+    }
 }

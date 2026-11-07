@@ -439,6 +439,10 @@ pub struct Snapshot {
 pub(crate) fn tab_label(app: &PdfCraftApp, index: usize) -> Option<String> {
     let view = app.views.get(index)?;
     let doc = app.session.get(view.id)?;
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    if app.ctx.as_ref().is_some_and(|ctx| crate::host_state::state(ctx).lock().unwrap_or_else(|e| e.into_inner()).renamed.contains(&view.id.0)) {
+        return Some(doc.name.clone());
+    }
     let Some(snap) = view.snapshot.as_ref() else { return Some(doc.display_name()) };
     Some(snapshot_tab_name(&doc.display_name(), &doc.name, snap))
 }

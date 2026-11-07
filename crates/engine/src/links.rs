@@ -7,9 +7,13 @@ use std::path::{Path, PathBuf};
 /// The app's name in ArtCraft URLs (`getartcraft.com/apps/{APP}`, `github.com/storytold/{APP}`).
 pub const APP: &str = "pdfcraft";
 
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub const DISCORD: &str = "https://discord.gg/artcraft";
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub const WEBSITE: &str = "https://getartcraft.com";
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub const APP_PAGE: &str = "https://getartcraft.com/apps/pdfcraft";
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub const GITHUB: &str = "https://github.com/storytold/pdfcraft";
 
 /// A link and the registry command that opens it.
@@ -23,12 +27,16 @@ pub struct Link {
 }
 
 /// In the order they are shown. Discord comes first: it is where people get help fastest.
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 pub const LINKS: &[Link] = &[
     Link { command: "help.discord", label: "Join the ArtCraft Discord", url: DISCORD, icon: "messages-square" },
     Link { command: "help.app_page", label: "PdfCraft web page", url: APP_PAGE, icon: "globe" },
     Link { command: "help.github", label: "PdfCraft on GitHub", url: GITHUB, icon: "code-xml" },
     Link { command: "help.website", label: "ArtCraft website", url: WEBSITE, icon: "external-link" },
 ];
+
+#[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+pub const LINKS: &[Link] = &[];
 
 pub fn for_command(id: &str) -> Option<&'static Link> {
     LINKS.iter().find(|l| l.command == id)

@@ -40,9 +40,10 @@ impl PdfCraftApp {
         // what closing would ask about, so a draft not yet applied counts too.
         let dirty = self.active.is_some_and(|i| self.has_unsaved_work(i));
         let mark = if dirty { " •" } else { "" };
+        let app_name = crate::display_text("PdfCraft").into_owned();
         let titled = |name: Option<String>| {
             name.or_else(|| self.combine_showing().then(|| tl!("Combine files").to_owned()))
-                .map_or_else(|| "PdfCraft".to_owned(), |name| format!("{name}{mark} — PdfCraft"))
+                .map_or_else(|| app_name.clone(), |name| format!("{name}{mark} — {app_name}"))
         };
         let title = titled(self.active.and_then(|i| crate::canvas::tab_label(self, i)));
         // The web page's title is what an embedding host reads to tell which file opened, so it
@@ -357,7 +358,7 @@ impl PdfCraftApp {
 
     /// Notify with a `{name}`-style template in the UI language (placeholders filled once).
     pub fn notify_fmt(&mut self, template: &str, args: &[(&str, &str)]) {
-        self.notify(i18n::fmt(tl!(template), args));
+        self.notify(i18n::fmt(crate::display_text(tl!(template)).as_ref(), args));
     }
 
     /// `true` while any open document still waits for page renders (used by headless capture).
@@ -441,6 +442,8 @@ impl eframe::App for PdfCraftApp {
     /// the quit guard, shortcuts, and the background jobs' results.
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.ctx = Some(ctx.clone());
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        crate::embedded::apply(self, ctx);
         #[cfg(not(target_arch = "wasm32"))]
         self.window_state.repair(ctx);
         self.dialog_epoch();
@@ -624,6 +627,8 @@ impl eframe::App for PdfCraftApp {
         i18n::set_current(i18n::Lang::from_pref(&self.language));
         // A language change switches stock chrome between LTR and RTL before anything is drawn.
         theme::sync_direction(&ctx);
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        crate::host_state::notice(&ctx);
         // Fonts registered via set_fonts only take effect next frame; named families would panic now.
         if !self.fonts_ready {
             ctx.request_repaint();

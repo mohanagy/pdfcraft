@@ -114,6 +114,10 @@ fn manifest(dir: &std::path::Path, manifest: &std::path::Path, wasm: bool, stric
             continue;
         }
         has_hans |= cjk_scripts::has_script_tag(scripts, "Hans");
+        let lite = std::env::var_os("CARGO_FEATURE_EMBEDDED_LITE").is_some() && wasm;
+        if lite && scripts.split(',').any(|s| matches!(s.trim(), "Jpan" | "Hans" | "Hant" | "Hang" | "Kore" | "Thai" | "Telu" | "Deva" | "Geor")) {
+            continue;
+        }
         let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
         println!("cargo::rerun-if-changed={}", path.display());
         let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();

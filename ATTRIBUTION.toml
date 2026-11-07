@@ -3200,3 +3200,25 @@ kind = "icon"
 usage = "UI icon, embedded via crates/ui-egui/src/icon_data.rs"
 sha256 = "864ab2f19254e6ac7240bc6a98323197332e8f714d4d3f94831f41309e5ef2f7"
 
+
+[[asset]]
+path = "embedded-test/sample.pdf"
+title = "Embedded PDF sample"
+author = "PdfCraft contributors"
+source = "Original synthetic text-only fixture for embedded-test/index.html"
+licence = "MIT OR Apache-2.0"
+licence_file = "LICENSE-MIT"
+kind = "document"
+usage = "Local iframe bridge smoke test; no font programs or third-party artwork"
+sha256 = "119567420952a5d290f633c91bd809c145c20258c5f8eac79573d6cd882abfe3"
+
+[[asset]]
+path = "embedded-test/blank.pdf"
+title = "Blank host-open fixture"
+author = "PdfCraft contributors"
+source = "Original synthetic one-page empty PDF for host protocol testing"
+licence = "MIT OR Apache-2.0"
+licence_file = "LICENSE-MIT"
+kind = "document"
+usage = "Blank-document dirty-state regression"
+sha256 = "e7e96ab239c8f1d9590bc2f562e23ff55bb032ba0ba40ca97102933328b534b7"

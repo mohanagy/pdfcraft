@@ -399,12 +399,17 @@ pub const COMMANDS: &[CommandSpec] = &[
     c("page.number", "Number pages…", PAGES, None, Assembly, "hash"),
     c("page.properties", "Page properties…", PAGES, None, Modification, "info"),
     c("help.shortcuts", "Keyboard shortcuts", HELP, None, Nothing, "circle-help"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("help.discord", "Join the ArtCraft Discord", HELP, None, Nothing, "messages-square"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("help.app_page", "PdfCraft web page", HELP, None, Nothing, "globe"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("help.github", "PdfCraft on GitHub", HELP, None, Nothing, "code-xml"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("help.website", "ArtCraft website", HELP, None, Nothing, "external-link"),
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
     c("help.check_updates", "Check for updates…", HELP, None, Nothing, "cloud"),
-    c("help.about", "About PdfCraft", HELP, None, Nothing, "info"),
+    c("help.about", embedded_about_label(), HELP, None, Nothing, "info"),
 ];
 
 pub fn command(id: &str) -> Option<&'static CommandSpec> {
@@ -456,6 +461,17 @@ pub fn current_label(spec: &CommandSpec, session: &Session, active: Option<DocId
     match current_edit(spec, session, active) {
         Some((wording, label)) => wording.replacen("{}", label.as_str(), 1),
         None => spec.label.into(),
+    }
+}
+
+const fn embedded_about_label() -> &'static str {
+    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+    {
+        "About"
+    }
+    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+    {
+        "About PdfCraft"
     }
 }
 

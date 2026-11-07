@@ -28,6 +28,7 @@ fn main() {
                         app.restore(&json);
                     }
                     // `?file=<url>` opens a PDF from a URL (same-origin or CORS-enabled).
+                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                     if let Some(url) = query_param("file") {
                         let inbox = app.startup_inbox.clone();
                         let failed = app.failed_inbox.clone();
@@ -36,6 +37,12 @@ fn main() {
                             let name = url.rsplit('/').next().unwrap_or("document.pdf").split('?').next().unwrap_or("document.pdf").to_string();
                             match fetch_bytes(&url).await {
                                 Ok(bytes) => {
+                                    #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                                    {
+                                        pdfcraft_ui_egui::host_state::enqueue_open(&ctx, name, bytes);
+                                        return;
+                                    }
+                                    #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                                     if let Ok(mut q) = inbox.lock() {
                                         q.push((name, bytes));
                                     }
@@ -68,7 +75,7 @@ fn main() {
                         }
                         bridge.listen(app.startup_inbox.clone(), cc.egui_ctx.clone());
                         app.host_save = Some(bridge.save_fn());
-                        app.host_dirty = Some(bridge.dirty_fn());
+                        app.host_dirty = Some(bridge.dirty_fn(cc.egui_ctx.clone()));
                         bridge.post_ready();
                     } else if query_param("host").as_deref() == Some("parent") {
                         eframe::web_sys::console::warn_1(
@@ -111,6 +118,7 @@ fn query_param(key: &str) -> Option<String> {
 }
 
 #[cfg(target_arch = "wasm32")]
+#[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
 async fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
     use eframe::wasm_bindgen::JsCast;
     let window = web_sys::window().ok_or("no window")?;
@@ -174,7 +182,12 @@ mod host {
         }
 
         pub fn post_ready(&self) {
-            if let Some(m) = message(&[("type", "pdfcraft:ready".into()), ("version", env!("CARGO_PKG_VERSION").into())]) {
+            if let Some(m) = message(&[
+                ("type", "pdfcraft:ready".into()),
+                ("version", env!("CARGO_PKG_VERSION").into()),
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                ("protocol", 1.into()),
+            ]) {
                 let _ = self.post(&m, None);
             }
         }
@@ -188,6 +201,10 @@ mod host {
 
         /// Hear `pdfcraft:open` from the parent and queue the file like a `?file=` download.
         pub fn listen(&self, inbox: pdfcraft_ui_egui::Inbox, ctx: egui::Context) {
+            #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+            let bridge = self.clone();
+            #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+            let _ = &inbox;
             let parent = self.parent.clone();
             let origin = self.origin.clone();
             let on_message = Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
@@ -195,6 +212,39 @@ mod host {
                     return;
                 }
                 let data = event.data();
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                if let Some(kind) = string(&data, "type")
+                    .and_then(|s| s.strip_prefix("pdfcraft:").map(str::to_owned))
+                    .filter(|s| matches!(s.as_str(), "rename" | "requestSave" | "saved"))
+                {
+                    let input = js_sys::JSON::stringify(&data)
+                        .ok()
+                        .and_then(|v| v.as_string())
+                        .filter(|s| s.len() <= 65536)
+                        .and_then(|s| serde_json::from_str(&s).ok());
+                    if let Some(input) = input {
+                        pdfcraft_ui_egui::host_state::enqueue(&ctx, &kind, &input);
+                    }
+                    return;
+                }
+
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                if string(&data, "type").as_deref() == Some("pdfcraft:configure") {
+                    let input = js_sys::JSON::stringify(&data)
+                        .ok()
+                        .and_then(|s| s.as_string())
+                        .filter(|s| s.len() <= 65536)
+                        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                        .unwrap_or(serde_json::Value::Null);
+                    let reply = pdfcraft_ui_egui::embedded::configure(&ctx, &input);
+                    let applied = js_sys::JSON::parse(&reply["applied"].to_string()).unwrap_or(JsValue::NULL);
+                    let ignored = js_sys::JSON::parse(&reply["ignored"].to_string()).unwrap_or(JsValue::NULL);
+                    if let Some(m) = message(&[("type", "pdfcraft:configured".into()), ("applied", applied), ("ignored", ignored)]) {
+                        let _ = bridge.post(&m, None);
+                    }
+                    return;
+                }
+
                 if string(&data, "type").as_deref() != Some("pdfcraft:open") {
                     return;
                 }
@@ -207,6 +257,9 @@ mod host {
                 } else {
                     return;
                 };
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                pdfcraft_ui_egui::host_state::enqueue_open(&ctx, name, bytes);
+                #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
                 if let Ok(mut q) = inbox.lock() {
                     q.push((name, bytes));
                 }
@@ -229,11 +282,22 @@ mod host {
             })
         }
 
-        pub fn dirty_fn(&self) -> pdfcraft_ui_egui::HostDirtyFn {
+        pub fn dirty_fn(&self, ctx: egui::Context) -> pdfcraft_ui_egui::HostDirtyFn {
             let bridge = self.clone();
             let mut last = false;
+            #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+            let mut first = true;
+            #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+            let _ = ctx;
             Box::new(move |dirty: bool| {
-                if dirty != last {
+                let changed = dirty != last;
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                let changed = changed || first || ctx.data_mut(|d| d.remove_temp::<bool>(egui::Id::unique("host-open-dirty-reset"))).unwrap_or(false);
+                #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+                {
+                    first = false;
+                }
+                if changed {
                     last = dirty;
                     if let Some(m) = message(&[("type", "pdfcraft:dirty".into()), ("dirty", dirty.into())]) {
                         let _ = bridge.post(&m, None);

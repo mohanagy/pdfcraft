@@ -305,3 +305,23 @@ impl Session {
         &self.docs
     }
 }
+
+#[cfg(feature = "embedded")]
+impl Session {
+    /// A host-controlled file label, independent of PDF metadata and content edit history.
+    pub fn rename_host_file(&mut self, id: DocId, name: String) -> Result<(), crate::EditError> {
+        let doc = self.docs.iter_mut().find(|d| d.id == id).ok_or(crate::EditError::NoDocument)?;
+        doc.name = name;
+        Ok(())
+    }
+}
+
+#[cfg(feature = "embedded")]
+impl Session {
+    /// Load-time canonicalization is the host's opening baseline, not an editor-authored change.
+    pub fn accept_host_baseline(&mut self, id: DocId) -> Result<(), crate::EditError> {
+        let doc = self.docs.iter_mut().find(|d| d.id == id).ok_or(crate::EditError::NoDocument)?;
+        doc.dirty = false;
+        Ok(())
+    }
+}

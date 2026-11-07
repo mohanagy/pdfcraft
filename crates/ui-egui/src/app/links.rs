@@ -85,10 +85,17 @@ impl PdfCraftApp {
     /// Open a web link in the system browser (a new tab on the web). Only for PdfCraft's own
     /// links; an address that came from a document goes through [`Self::request_document_url`].
     pub fn open_url(&mut self, url: &str) {
-        if let Some(ctx) = &self.ctx {
-            ctx.open_url(egui::OpenUrl::new_tab(url));
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        {
+            let _ = url;
         }
-        self.last_opened_url = Some(url.to_string());
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+        {
+            if let Some(ctx) = &self.ctx {
+                ctx.open_url(egui::OpenUrl::new_tab(url));
+            }
+            self.last_opened_url = Some(url.to_string());
+        }
     }
 
     /// A document asks to open `url` (a link, a button's URI action or `app.launchURL`). Web and
@@ -96,20 +103,27 @@ impl PdfCraftApp {
     /// (#90, #91). While one request is waiting, further ones are dropped, so a script can't
     /// queue up a stream of dialogs.
     pub fn request_document_url(&mut self, url: &str, origin: LinkOrigin) {
-        match pdfcraft_engine::links::document_url(url) {
-            Ok(url) => {
-                if self.pending_link.is_none() && self.pending_remote_link.is_none() {
-                    self.pending_link = Some(PendingLink { url, origin });
+        #[cfg(all(feature = "embedded", target_arch = "wasm32"))]
+        {
+            let _ = (url, origin);
+        }
+        #[cfg(not(all(feature = "embedded", target_arch = "wasm32")))]
+        {
+            match pdfcraft_engine::links::document_url(url) {
+                Ok(url) => {
+                    if self.pending_link.is_none() && self.pending_remote_link.is_none() {
+                        self.pending_link = Some(PendingLink { url, origin });
+                    }
                 }
-            }
-            Err(e) => {
-                use pdfcraft_engine::links::BlockedLink;
-                let template = if matches!(e, BlockedLink::MailFile | BlockedLink::MailEncodedWord) {
-                    "{who} in this document tried to open an address PdfCraft won't open: {e}."
-                } else {
-                    "{who} in this document tried to open an address PdfCraft won't open: {e}. Only web (http, https) and email (mailto) links open from documents."
-                };
-                self.notify_fmt(template, &[("who", tl!(origin.noun())), ("e", &e.to_string())]);
+                Err(e) => {
+                    use pdfcraft_engine::links::BlockedLink;
+                    let template = if matches!(e, BlockedLink::MailFile | BlockedLink::MailEncodedWord) {
+                        "{who} in this document tried to open an address PdfCraft won't open: {e}."
+                    } else {
+                        "{who} in this document tried to open an address PdfCraft won't open: {e}. Only web (http, https) and email (mailto) links open from documents."
+                    };
+                    self.notify_fmt(template, &[("who", tl!(origin.noun())), ("e", &e.to_string())]);
+                }
             }
         }
     }
